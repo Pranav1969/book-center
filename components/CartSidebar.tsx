@@ -17,7 +17,7 @@ export default function CartSidebar() {
   const [utr, setUtr] = useState("");
 
   // Config - Your UPI Details
-  const VPA_ID = "pranavbskamble01@oksbi"; 
+  const VPA_ID = "kamblebhimrao81-1@oksbi"; 
   const MERCHANT_NAME = "Karuna Book Center";
   
   // Calculate total price
