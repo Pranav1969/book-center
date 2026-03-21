@@ -1,109 +1,108 @@
-"use client";
+import { supabase } from "@/app/lib/supabase";
+import BookCard from "@/components/BookCard";
 
-import { useEffect, useState } from "react";
-import { createClient } from "@supabase/supabase-js";
-import BookCard from "../components/BookCard";
-import Navbar from "../components/Navbar"; // ✅ Imported Navbar for Cart support
+export const revalidate = 0;
 
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-);
+export default async function Home() {
+  // Fetch data
+  const { data: allBooks, error } = await supabase
+    .from("books")
+    .select("*")
+    .order("created_at", { ascending: false });
 
-export default function Home() {
-  const [books, setBooks] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [search, setSearch] = useState("");
+  if (error) return <div className="p-20 text-center font-serif">Error loading library...</div>;
 
-  useEffect(() => {
-    async function getBooks() {
-      // ✅ Fetching all necessary columns including discount_percent
-      const { data, error } = await supabase
-        .from("books")
-        .select("id, title, author, price, category, image_url, back_image_url, discount_percent")
-        .order("created_at", { ascending: false });
-
-      if (!error && data) {
-        setBooks(data);
-      } else if (error) {
-        console.error("Error fetching books:", error.message);
-      }
-      setLoading(false);
-    }
-    getBooks();
-  }, []);
-
-  const filtered = books.filter(
-    (b) =>
-      b.title.toLowerCase().includes(search.toLowerCase()) ||
-      b.author.toLowerCase().includes(search.toLowerCase())
-  );
+  const featuredBooks = allBooks?.filter((b) => b.is_featured) || [];
+  const collections = [...new Set(allBooks?.map((b) => b.collection_name))].filter(Boolean) as string[];
 
   return (
-    <main className="min-h-screen bg-[#fcfaf7]">
-      {/* ✅ Replaced static nav with our dynamic Navbar component */}
-      <Navbar />
-
-      {/* Header */}
-      <header className="max-w-6xl mx-auto px-6 py-16 md:py-24">
-        {/* Updated Brand Name: Karuna Book Center */}
-        <h1 className="text-6xl md:text-8xl font-serif font-bold tracking-tighter text-stone-900 leading-none">
-          Karuna <br /> Book Center
-        </h1>
-
-        <div className="mt-8 flex items-center gap-4 text-stone-500">
-          <div className="h-px w-12 bg-stone-300" />
-          <p className="uppercase tracking-[0.3em] text-[10px] font-bold">
-            Curating {books.length} unique titles
-          </p>
+    <main className="min-h-screen bg-[#fdfcfb]">
+      
+      {/* 1. RESTORED: HERO SECTION & SEARCH */}
+      <section className="bg-stone-900 text-white pt-24 pb-20 px-6">
+        <div className="max-w-7xl mx-auto text-center">
+          <h1 className="font-serif text-5xl md:text-7xl mb-6 italic">Karuna Book Center</h1>
+          <p className="text-stone-400 uppercase tracking-[0.3em] text-[10px] mb-10">Curating Knowledge, One Page at a Time</p>
+          
+          {/* Search Bar UI (Visual only for now, logic can be added) */}
+          <div className="max-w-2xl mx-auto relative">
+            <input 
+              type="text" 
+              placeholder="Search by title, author, or category..." 
+              className="w-full bg-stone-800 border-none py-4 px-6 rounded-full text-sm focus:ring-2 ring-stone-600 outline-none transition-all"
+            />
+            <button className="absolute right-4 top-1/2 -translate-y-1/2 text-stone-500 font-bold text-xs uppercase">Search</button>
+          </div>
         </div>
+      </section>
 
-        {/* Integrated Search within Header for cleaner UI */}
-        <div className="mt-12 max-w-md">
-          <input
-            type="text"
-            placeholder="Search by title or author..."
-            className="w-full bg-white border border-stone-200 rounded-full px-6 py-4 text-sm focus:ring-2 focus:ring-teal-800 outline-none transition-all shadow-sm"
-            onChange={(e) => setSearch(e.target.value)}
-          />
+      {/* 2. RESTORED: CATEGORY QUICK-NAV */}
+      <div className="sticky top-0 z-40 bg-white/80 backdrop-blur-md border-b border-stone-100 overflow-x-auto no-scrollbar">
+        <div className="max-w-7xl mx-auto px-6 py-4 flex gap-8 whitespace-nowrap">
+          <a href="#" className="text-[10px] font-bold uppercase tracking-widest text-stone-900 border-b-2 border-stone-900">All Books</a>
+          {collections.map(col => (
+            <a 
+              key={col} 
+              href={`#${col}`} 
+              className="text-[10px] font-bold uppercase tracking-widest text-stone-400 hover:text-stone-900 transition-colors"
+            >
+              {col}
+            </a>
+          ))}
         </div>
-      </header>
+      </div>
 
-      {/* Books Grid */}
-      <section className="max-w-6xl mx-auto px-6 pb-24">
-        {loading ? (
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
-            {[1, 2, 3, 4].map((i) => (
-              <div
-                key={i}
-                className="aspect-[3/4] bg-stone-200 animate-pulse rounded-sm"
-              />
+      {/* 3. RESTORED: FEATURED SLIDER */}
+      {featuredBooks.length > 0 && (
+        <section className="py-16 px-6 max-w-7xl mx-auto">
+          <div className="flex justify-between items-end mb-10">
+            <div>
+              <span className="text-[10px] font-black uppercase tracking-[0.2em] text-amber-600">Editor's Choice</span>
+              <h2 className="font-serif text-3xl font-bold italic mt-1">Featured This Month</h2>
+            </div>
+          </div>
+          <div className="flex gap-8 overflow-x-auto pb-6 no-scrollbar snap-x">
+            {featuredBooks.map((book) => (
+              <div key={book.id} className="min-w-[220px] md:min-w-[300px] snap-start">
+                <BookCard book={book} />
+              </div>
             ))}
           </div>
-        ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-x-6 gap-y-12">
-            {filtered.length > 0 ? (
-              filtered.map((book) => (
-                <BookCard
-                  key={book.id}
-                  id={book.id}
-                  title={book.title}
-                  author={book.author}
-                  price={book.price}
-                  category={book.category}
-                  image_url={book.image_url}
-                  back_image_url={book.back_image_url}
-                  discount_percent={book.discount_percent} // ✅ Correctly passing to Card
-                />
-              ))
-            ) : (
-              <div className="col-span-full py-20 text-center font-serif text-stone-400 italic">
-                No titles match your search criteria.
-              </div>
-            )}
-          </div>
-        )}
+        </section>
+      )}
+
+      {/* 4. DYNAMIC COLLECTIONS */}
+      <div className="max-w-7xl mx-auto px-6 pb-24 space-y-24">
+        {collections.map((colName) => (
+          <section key={colName} id={colName} className="scroll-mt-28">
+            <div className="flex justify-between items-baseline mb-8 border-b border-stone-100 pb-4">
+              <h3 className="font-serif text-2xl font-bold text-stone-800">{colName}</h3>
+              <span className="text-[10px] font-bold text-stone-300 uppercase tracking-widest">
+                {allBooks?.filter(b => b.collection_name === colName).length} Books
+              </span>
+            </div>
+
+            <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-x-6 gap-y-12">
+              {allBooks
+                ?.filter((b) => b.collection_name === colName)
+                .map((book) => (
+                  <BookCard key={book.id} book={book} />
+                ))}
+            </div>
+          </section>
+        ))}
+      </div>
+
+      {/* 5. RESTORED: NEWSLETTER / FOOTER */}
+      <section className="bg-stone-100 py-20 px-6 text-center border-t border-stone-200">
+        <h4 className="font-serif text-2xl italic mb-4 text-stone-800">Join the Reader's Circle</h4>
+        <p className="text-stone-500 text-sm mb-8 max-w-md mx-auto">Get updates on new UPSC arrivals and limited time discounts directly in your inbox.</p>
+        <div className="flex max-w-md mx-auto gap-2">
+          <input type="email" placeholder="Email Address" className="flex-1 bg-white border border-stone-200 px-4 py-3 text-sm outline-none focus:border-stone-900" />
+          <button className="bg-stone-900 text-white px-6 py-3 text-[10px] font-bold uppercase tracking-widest">Join</button>
+        </div>
       </section>
+
     </main>
   );
 }
