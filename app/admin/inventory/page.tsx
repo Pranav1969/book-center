@@ -13,13 +13,14 @@ export default function InventoryPage() {
     author: "",
     publication: "",
     description: "",
-    category: "", // ✅ ADDED
+    category: "",
     price: "", 
     image_url: "", 
     back_image_url: "",
     collection_name: "General", 
     discount_percent: 0, 
-    is_featured: false
+    is_featured: false,
+    is_bestseller: false // ✅ ADDED
   });
 
   useEffect(() => { fetchBooks(); }, []);
@@ -57,13 +58,14 @@ export default function InventoryPage() {
         author: "",
         publication: "",
         description: "",
-        category: "", // ✅ RESET
+        category: "",
         price: "", 
         image_url: "", 
         back_image_url: "",
         collection_name: "General", 
         discount_percent: 0, 
-        is_featured: false 
+        is_featured: false,
+        is_bestseller: false // ✅ RESET
       });
       setEditingId(null);
       fetchBooks();
@@ -131,7 +133,6 @@ export default function InventoryPage() {
                   />
                 </div>
 
-                {/* ✅ CATEGORY INPUT */}
                 <input 
                   className="w-full border-b py-2 outline-none text-sm"
                   placeholder="Category (e.g. Fiction, UPSC, Kids)"
@@ -169,13 +170,32 @@ export default function InventoryPage() {
                 className="border-b py-2 w-full"
               />
 
-              <label className="flex gap-2">
-                <input type="checkbox"
-                  checked={form.is_featured}
-                  onChange={e => setForm({...form, is_featured: e.target.checked})}
-                />
-                Featured
-              </label>
+              {/* ✅ BESTSELLER + FEATURED CHECKBOX */}
+              <div className="flex gap-6 pt-2">
+                <label className="flex items-center gap-2 cursor-pointer group">
+                  <input 
+                    type="checkbox" 
+                    className="w-4 h-4 accent-amber-500" 
+                    checked={form.is_bestseller} 
+                    onChange={e => setForm({...form, is_bestseller: e.target.checked})} 
+                  />
+                  <span className="text-[10px] font-bold uppercase text-stone-500 group-hover:text-amber-600 transition-colors">
+                    Best Seller
+                  </span>
+                </label>
+
+                <label className="flex items-center gap-2 cursor-pointer group">
+                  <input 
+                    type="checkbox" 
+                    className="w-4 h-4 accent-stone-900" 
+                    checked={form.is_featured} 
+                    onChange={e => setForm({...form, is_featured: e.target.checked})} 
+                  />
+                  <span className="text-[10px] font-bold uppercase text-stone-500 group-hover:text-stone-900">
+                    Featured
+                  </span>
+                </label>
+              </div>
 
               <button className="w-full bg-black text-white py-3">
                 {loading ? "Processing..." : editingId ? "Update" : "Save"}
@@ -193,7 +213,6 @@ export default function InventoryPage() {
                   <h4 className="font-bold">{book.title}</h4>
                   <p className="text-xs">{book.author}</p>
 
-                  {/* ✅ SHOW CATEGORY */}
                   <p className="text-[10px] text-gray-400 uppercase">
                     {book.category || "No Category"}
                   </p>
