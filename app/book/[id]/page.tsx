@@ -1,19 +1,16 @@
 "use client";
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
-import { createClient } from "@supabase/supabase-js";
+import { supabase } from "@/app/lib/supabase";
 import Link from "next/link";
 import ReactMarkdown from "react-markdown";
-import BookCard from "../../../components/BookCard";
-import { useCart } from "../../../context/CartContext";
-
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-);
+import BookCard from "@/components/BookCard";
+import { useCart } from "@/context/CartContext";
 
 export default function BookDetail() {
-  const { id } = useParams();
+  const params = useParams();
+  const id = params?.id;
+
   const { addToCart } = useCart();
 
   const [book, setBook] = useState<any>(null);
@@ -21,27 +18,41 @@ export default function BookDetail() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    if (!id) return;
+
     async function fetchFullData() {
       setLoading(true);
 
-      const { data: currentBook } = await supabase
+      // ✅ Fetch current book (safe)
+      const { data: currentBook, error } = await supabase
         .from("books")
         .select("*")
         .eq("id", id)
-        .single();
+        .maybeSingle();
 
-      if (currentBook) {
-        setBook(currentBook);
-
-        const { data: related } = await supabase
-          .from("books")
-          .select("*")
-          .eq("category", currentBook.category)
-          .neq("id", id)
-          .limit(4);
-
-        setRelatedBooks(related || []);
+      if (error) {
+        console.error("Fetch Error:", error);
+        setLoading(false);
+        return;
       }
+
+      if (!currentBook) {
+        setBook(null);
+        setLoading(false);
+        return;
+      }
+
+      setBook(currentBook);
+
+      // ✅ Related logic from FIRST CODE (category based)
+      const { data: related } = await supabase
+        .from("books")
+        .select("*")
+        .eq("category", currentBook.category) // 👈 FROM FIRST CODE
+        .neq("id", id)
+        .limit(4);
+
+      setRelatedBooks((related || []).filter(Boolean));
 
       setLoading(false);
     }
@@ -49,6 +60,7 @@ export default function BookDetail() {
     fetchFullData();
   }, [id]);
 
+  // ✅ Loading
   if (loading)
     return (
       <div className="p-20 text-center font-serif animate-pulse text-stone-400">
@@ -56,6 +68,7 @@ export default function BookDetail() {
       </div>
     );
 
+  // ✅ Not found
   if (!book)
     return (
       <div className="p-20 text-center font-serif">
@@ -63,85 +76,97 @@ export default function BookDetail() {
       </div>
     );
 
-  // Discount Logic
-  const discount = Number(book.discount_percent) || 0;
-  const actualPrice = Number(book.price);
-  const finalPrice = actualPrice - (actualPrice * (discount / 100));
+  // ✅ Price Logic
+  const discount = Number(book?.discount_percent) || 0;
+  const actualPrice = Number(book?.price) || 0;
+  const finalPrice = actualPrice - (actualPrice * discount) / 100;
 
   return (
     <main className="min-h-screen bg-[#fcfaf7] pb-32">
+      
       {/* Breadcrumbs */}
       <nav className="max-w-7xl mx-auto px-6 py-8 flex items-center gap-2 text-[10px] uppercase tracking-[0.2em] font-bold text-stone-400">
-        <Link href="/" className="hover:text-stone-900 transition-colors">
-          Library
-        </Link>
+        <Link href="/" className="hover:text-stone-900">Library</Link>
         <span>/</span>
-        <span className="text-stone-300">{book.category}</span>
+        <span className="text-stone-600">
+          {book?.collection_name || book?.category || "General"}
+        </span>
         <span>/</span>
         <span className="text-stone-900 truncate max-w-[150px]">
-          {book.title}
+          {book?.title}
         </span>
       </nav>
 
       <section className="max-w-6xl mx-auto px-6 grid grid-cols-1 md:grid-cols-2 gap-16 py-4">
         
-        {/* Book Cover */}
-        <div className="relative group">
-          <div className="bg-white shadow-2xl border border-stone-200 aspect-[3/4] overflow-hidden sticky top-24">
+        {/* IMAGE SECTION */}
+        <div className="space-y-8">
+          <div className="relative bg-white shadow-2xl border aspect-[3/4] overflow-hidden sticky top-24">
             
-            {/* Discount Badge */}
             {discount > 0 && (
-              <div className="absolute top-4 left-4 z-30 bg-red-500 text-white text-xs px-3 py-1 font-bold rounded">
+              <div className="absolute top-4 left-4 z-30 bg-red-600 text-white text-[10px] px-3 py-1 font-bold">
                 {discount}% OFF
               </div>
             )}
 
+            {/* BACK IMAGE */}
             <img
-              src={book.image_url}
-              alt={book.title}
-              className="w-full h-full object-cover"
+              src={book?.back_image_url || book?.image_url}
+              alt="Back Cover"
+              className="absolute inset-0 w-full h-full object-cover"
+            />
+
+            {/* FRONT IMAGE (Auto Slide) */}
+            <img
+              src={book?.image_url || "/placeholder.jpg"}
+              alt={book?.title}
+              className="absolute inset-0 w-full h-full object-cover animate-slide"
             />
           </div>
         </div>
 
-        {/* Text Details */}
+        {/* TEXT SECTION */}
         <div className="flex flex-col">
-          <h1 className="text-5xl md:text-7xl font-serif font-bold text-stone-900 leading-tight">
-            {book.title}
+          <h1 className="text-5xl md:text-6xl font-serif font-bold text-stone-900">
+            {book?.title}
           </h1>
 
-          <p className="text-2xl italic font-serif text-stone-500 mt-4">
-            by {book.author}
+          <p className="text-2xl italic text-stone-500 mt-4">
+            by {book?.author || "Unknown Author"}
           </p>
 
-          <div className="h-px bg-stone-200 w-full my-8" />
+          <p className="text-[10px] font-bold uppercase text-stone-400 mt-2">
+            Published by: {book?.publication || "Karuna Publications"}
+          </p>
+
+          <div className="h-px bg-stone-200 my-8" />
 
           {/* Description */}
-          <div className="prose prose-stone prose-sm max-w-none text-stone-700 leading-relaxed">
+          <div className="prose prose-sm text-stone-700 min-h-[200px]">
+            <h4 className="text-[10px] uppercase font-bold text-stone-400 mb-4">
+              About this title
+            </h4>
             <ReactMarkdown>
-              {book.description || "No summary available."}
+              {book?.description || "No summary available."}
             </ReactMarkdown>
           </div>
 
-          {/* Desktop Buy Section */}
+          {/* Desktop Buy */}
           <div className="mt-12 hidden md:flex items-center gap-8">
-            
-            <div className="flex flex-col">
+            <div>
               {discount > 0 && (
                 <span className="text-sm text-red-500 line-through">
-                  ₹{actualPrice.toFixed(2)}
+                  ₹{actualPrice.toFixed(0)}
                 </span>
               )}
-              <span className="text-4xl font-black text-stone-900">
-                ₹{finalPrice.toFixed(2)}
-              </span>
+              <div className="text-4xl font-black">
+                ₹{finalPrice.toFixed(0)}
+              </div>
             </div>
 
             <button
-              onClick={() => {
-                addToCart({ ...book, price: finalPrice });
-              }}
-              className="flex-1 bg-stone-900 text-white py-5 px-8 text-xs font-bold uppercase tracking-[0.3em] hover:bg-teal-900 transition-all shadow-xl"
+              onClick={() => addToCart({ ...book, price: finalPrice })}
+              className="flex-1 bg-stone-900 text-white py-5 text-xs font-bold uppercase hover:bg-teal-900"
             >
               Add to Collection
             </button>
@@ -149,45 +174,33 @@ export default function BookDetail() {
         </div>
       </section>
 
-      {/* Related Books */}
+      {/* RELATED BOOKS */}
       {relatedBooks.length > 0 && (
         <section className="max-w-6xl mx-auto px-6 mt-32">
-          <h2 className="text-xl font-serif font-bold italic text-stone-800 mb-8 border-b border-stone-200 pb-4">
-            Similar Titles
+          <h2 className="text-xl font-serif font-bold italic mb-8 border-b pb-4">
+            More from {book?.category || book?.collection_name}
           </h2>
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-8">
+
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
             {relatedBooks.map((r) => (
-              <BookCard key={r.id} {...r} />
+              <BookCard key={r.id} book={r} />
             ))}
           </div>
         </section>
       )}
 
-      {/* Mobile Sticky Bar */}
-      <div className="fixed bottom-0 left-0 right-0 bg-white/95 backdrop-blur-md border-t border-stone-200 p-4 z-50 md:hidden flex items-center justify-between shadow-[0_-10px_30px_rgba(0,0,0,0.05)]">
-        
-        <div className="flex flex-col">
-          <span className="text-[10px] uppercase font-bold text-stone-400">
-            Total
-          </span>
-
-          <div>
-            {discount > 0 && (
-              <span className="text-xs text-red-500 line-through mr-2">
-                ₹{actualPrice.toFixed(2)}
-              </span>
-            )}
-            <span className="text-xl font-black text-stone-900">
-              ₹{finalPrice.toFixed(2)}
-            </span>
+      {/* MOBILE BAR */}
+      <div className="fixed bottom-0 left-0 right-0 bg-white border-t p-4 md:hidden flex justify-between">
+        <div>
+          <span className="text-[10px] text-stone-400">Total</span>
+          <div className="text-xl font-black">
+            ₹{finalPrice.toFixed(0)}
           </div>
         </div>
 
         <button
-          onClick={() => {
-            addToCart({ ...book, price: finalPrice });
-          }}
-          className="bg-stone-900 text-white px-8 py-3 text-[10px] font-bold uppercase tracking-widest active:scale-95 transition-transform"
+          onClick={() => addToCart({ ...book, price: finalPrice })}
+          className="bg-stone-900 text-white px-6 py-3 text-[10px] font-bold"
         >
           Add to Cart
         </button>
