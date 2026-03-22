@@ -89,9 +89,18 @@ export default function AdminDashboard() {
 
   return (
     <div className="p-4 md:p-8 bg-stone-50 min-h-screen font-sans text-stone-900">
+      {/* Global CSS for Number Inputs to show arrows on mobile/web */}
+      <style jsx global>{`
+        input[type='number']::-webkit-inner-spin-button,
+        input[type='number']::-webkit-outer-spin-button {
+          -webkit-appearance: inner-spin-button !important;
+          opacity: 1 !important;
+        }
+      `}</style>
+
       <div className="max-w-7xl mx-auto">
         
-        {/* HEADER - Mobile optimized nav */}
+        {/* HEADER */}
         <header className="flex flex-col mb-10 pb-6 border-b border-stone-200">
           <div className="mb-6">
             <h1 className="text-2xl md:text-3xl font-serif font-bold italic text-stone-800">Admin Dashboard</h1>
@@ -107,7 +116,7 @@ export default function AdminDashboard() {
 
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-10">
           
-          {/* FORM SECTION - No longer sticky on mobile */}
+          {/* FORM SECTION */}
           <section className="lg:col-span-5 bg-white p-5 md:p-8 border border-stone-200 shadow-sm rounded-sm h-fit lg:sticky lg:top-8 order-1 lg:order-1">
             <h2 className="text-[10px] font-black uppercase tracking-widest text-teal-600 mb-6 border-b pb-2">
               {editingId ? "Edit Book Record" : "New Library Entry"}
@@ -149,17 +158,34 @@ export default function AdminDashboard() {
               </div>
 
               <div className="grid grid-cols-3 gap-3">
-                <div>
+                <div className="flex flex-col">
                   <label className="text-[9px] font-bold text-stone-400 uppercase">Price</label>
-                  <input type="number" value={form.price || ""} onChange={e => setForm({...form, price: e.target.value})} className="w-full border-b py-2 outline-none bg-transparent font-bold text-sm" required />
+                  <input 
+                    type="number" 
+                    value={form.price || ""} 
+                    onChange={e => setForm({...form, price: e.target.value})} 
+                    className="w-full border-b py-2 outline-none bg-transparent font-bold text-sm" 
+                    required 
+                  />
                 </div>
-                <div>
+                <div className="flex flex-col">
                   <label className="text-[9px] font-bold text-stone-400 uppercase">Disc%</label>
-                  <input type="number" value={form.discount_percent || 0} onChange={e => setForm({...form, discount_percent: Number(e.target.value)})} className="w-full border-b py-2 text-red-600 outline-none bg-transparent font-bold text-sm" />
+                  <input 
+                    type="number" 
+                    value={form.discount_percent || 0} 
+                    onChange={e => setForm({...form, discount_percent: Number(e.target.value)})} 
+                    className="w-full border-b py-2 text-red-600 outline-none bg-transparent font-bold text-sm" 
+                  />
                 </div>
-                <div>
+                <div className="flex flex-col">
                   <label className="text-[9px] font-bold text-stone-400 uppercase">Stock</label>
-                  <input type="number" value={form.stock_count || 0} onChange={e => setForm({...form, stock_count: Number(e.target.value)})} className="w-full border-b py-2 text-teal-600 outline-none bg-transparent font-bold text-sm" />
+                  {/* Stock Input with forced arrow display */}
+                  <input 
+                    type="number" 
+                    value={form.stock_count || 0} 
+                    onChange={e => setForm({...form, stock_count: Number(e.target.value)})} 
+                    className="w-full border-b py-2 text-teal-600 outline-none bg-transparent font-bold text-sm"
+                  />
                 </div>
               </div>
 
@@ -203,7 +229,7 @@ export default function AdminDashboard() {
         </div>
       </div>
 
-      {/* AUTHOR MODAL - Responsive sizing */}
+      {/* AUTHOR MODAL */}
       {showAuthorModal && (
         <div className="fixed inset-0 bg-stone-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
           <div className="bg-white p-6 md:p-8 max-w-md w-full shadow-2xl border border-stone-200 rounded-sm overflow-y-auto max-h-[90vh]">
