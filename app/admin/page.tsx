@@ -8,7 +8,7 @@ const INITIAL_FORM = {
   title: "", author: "", author_id: "", publication: "", description: "",
   category: "", price: "", image_url: "", back_image_url: "",
   collection_name: "General", discount_percent: 0, 
-  stock_count: 0, // Added to match your table column
+  stock_count: 0, 
   is_featured: false, is_bestseller: false 
 };
 
@@ -47,13 +47,7 @@ export default function AdminDashboard() {
   async function handleQuickAddAuthor() {
     if (!newAuthor.name) return alert("Author name is required!");
     setSaveLoading(true);
-    
-    const payload = {
-      name: newAuthor.name,
-      bio: newAuthor.bio || "",
-      profile_image_url: newAuthor.profile_image_url || ""
-    };
-
+    const payload = { name: newAuthor.name, bio: newAuthor.bio || "", profile_image_url: newAuthor.profile_image_url || "" };
     const { data, error } = editingAuthorId 
       ? await supabase.from("authors").update(payload).eq("id", editingAuthorId).select().single()
       : await supabase.from("authors").insert([payload]).select().single();
@@ -71,17 +65,9 @@ export default function AdminDashboard() {
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!form.image_url || !form.author_id) return alert("Missing Front Image or Author!");
-    
     setLoading(true);
-
     const { authors: nestedAuthors, id, created_at, ...cleanFormData } = form as any;
-
-    const payload = { 
-      ...cleanFormData, 
-      price: Number(form.price), 
-      discount_percent: Number(form.discount_percent),
-      stock_count: Number(form.stock_count) // Ensure it's a number
-    };
+    const payload = { ...cleanFormData, price: Number(form.price), discount_percent: Number(form.discount_percent), stock_count: Number(form.stock_count) };
 
     const { error } = editingId 
       ? await supabase.from("books").update(payload).eq("id", editingId)
@@ -91,60 +77,50 @@ export default function AdminDashboard() {
       resetForm();
       fetchData();
       alert(editingId ? "Book Updated!" : "Book Added!");
-    } else {
-      console.error("Supabase Error:", error);
-      alert(error.message);
-    }
+    } else alert(error.message);
     setLoading(false);
   }
 
   async function handleDelete(id: string) {
-    if (!confirm("Are you sure you want to delete this book? This action cannot be undone.")) return;
-    
+    if (!confirm("Are you sure?")) return;
     const { error } = await supabase.from("books").delete().eq("id", id);
-    if (!error) {
-      fetchData();
-      alert("Book removed from inventory.");
-    } else {
-      alert(error.message);
-    }
+    if (!error) fetchData();
   }
 
   return (
-    <div className="p-8 bg-stone-50 min-h-screen font-sans text-stone-900">
+    <div className="p-4 md:p-8 bg-stone-50 min-h-screen font-sans text-stone-900">
       <div className="max-w-7xl mx-auto">
         
-        {/* HEADER */}
-        <header className="flex flex-col md:flex-row justify-between items-start md:items-center mb-10 pb-6 border-b border-stone-200">
-          <div>
-            <h1 className="text-3xl font-serif font-bold italic">Admin Dashboard</h1>
+        {/* HEADER - Mobile optimized nav */}
+        <header className="flex flex-col mb-10 pb-6 border-b border-stone-200">
+          <div className="mb-6">
+            <h1 className="text-2xl md:text-3xl font-serif font-bold italic text-stone-800">Admin Dashboard</h1>
             <p className="text-[10px] font-bold uppercase tracking-[0.3em] text-stone-400">Control Panel</p>
           </div>
-          <nav className="flex gap-3 mt-4 md:mt-0">
-            <Link href="/admin" className="px-5 py-2 bg-stone-900 text-white text-[10px] font-bold uppercase rounded-full">Inventory</Link>
-            {/* LINK TO STOCK PAGE ADDED HERE */}
-            <Link href="/admin/stock" className="px-5 py-2 bg-white border border-teal-600 text-teal-600 text-[10px] font-bold uppercase rounded-full hover:bg-teal-50 transition-colors">Stock Analysis</Link>
-            <Link href="/admin/banners" className="px-5 py-2 bg-white border text-[10px] font-bold uppercase rounded-full hover:bg-stone-100 transition-colors">Banners</Link>
-            <Link href="/admin/authors" className="px-5 py-2 bg-white border text-[10px] font-bold uppercase rounded-full hover:bg-stone-100 transition-colors">Authors</Link>
+          <nav className="flex gap-2 overflow-x-auto pb-2 no-scrollbar scroll-smooth whitespace-nowrap -mx-4 px-4 md:mx-0 md:px-0">
+            <Link href="/admin" className="px-5 py-2 bg-stone-900 text-white text-[10px] font-bold uppercase rounded-full shrink-0">Inventory</Link>
+            <Link href="/admin/stock" className="px-5 py-2 bg-white border border-teal-600 text-teal-600 text-[10px] font-bold uppercase rounded-full shrink-0">Stock</Link>
+            <Link href="/admin/banners" className="px-5 py-2 bg-white border text-[10px] font-bold uppercase rounded-full shrink-0">Banners</Link>
+            <Link href="/admin/authors" className="px-5 py-2 bg-white border text-[10px] font-bold uppercase rounded-full shrink-0">Authors</Link>
           </nav>
         </header>
 
-        <div className="grid lg:grid-cols-12 gap-10">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-10">
           
-          {/* FORM SECTION */}
-          <section className="lg:col-span-5 bg-white p-8 border border-stone-200 shadow-sm rounded-sm h-fit sticky top-8">
+          {/* FORM SECTION - No longer sticky on mobile */}
+          <section className="lg:col-span-5 bg-white p-5 md:p-8 border border-stone-200 shadow-sm rounded-sm h-fit lg:sticky lg:top-8 order-1 lg:order-1">
             <h2 className="text-[10px] font-black uppercase tracking-widest text-teal-600 mb-6 border-b pb-2">
               {editingId ? "Edit Book Record" : "New Library Entry"}
             </h2>
 
             <form onSubmit={handleSubmit} className="space-y-5">
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-2 gap-3 md:gap-4">
                 <ImageCapture label="Front" onUpload={(url) => setForm({...form, image_url: url})} />
                 <ImageCapture label="Back" onUpload={(url) => setForm({...form, back_image_url: url})} />
               </div>
 
               <input 
-                className="w-full border-b py-2 text-lg font-serif outline-none bg-transparent" 
+                className="w-full border-b py-2 text-base md:text-lg font-serif outline-none bg-transparent" 
                 placeholder="Book Title" 
                 value={form.title || ""} 
                 onChange={e => setForm({...form, title: e.target.value})} 
@@ -152,10 +128,10 @@ export default function AdminDashboard() {
               />
               
               <div className="space-y-1">
-                <label className="text-[9px] font-bold uppercase text-stone-400">Author Association</label>
-                <div className="flex gap-2">
+                <label className="text-[9px] font-bold uppercase text-stone-400">Author</label>
+                <div className="flex flex-wrap gap-2">
                   <select 
-                    className="flex-1 border-b py-2 text-sm outline-none bg-transparent" 
+                    className="flex-1 min-w-[150px] border-b py-2 text-sm outline-none bg-transparent" 
                     value={form.author_id || ""} 
                     onChange={(e) => setForm({...form, author_id: e.target.value, author: authors.find(a => a.id === e.target.value)?.name || ""})} 
                     required
@@ -163,65 +139,61 @@ export default function AdminDashboard() {
                     <option value="">Select Author...</option>
                     {authors.map(a => <option key={a.id} value={a.id}>{a.name}</option>)}
                   </select>
-                  <button type="button" onClick={() => { setEditingAuthorId(null); setNewAuthor(INITIAL_AUTHOR); setShowAuthorModal(true); }} className="text-[10px] font-bold bg-teal-50 text-teal-700 px-3 rounded uppercase">+ New</button>
+                  <button type="button" onClick={() => { setEditingAuthorId(null); setNewAuthor(INITIAL_AUTHOR); setShowAuthorModal(true); }} className="text-[10px] font-bold bg-teal-50 text-teal-700 px-3 py-2 rounded uppercase">+ New</button>
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <input className="border-b py-2 text-sm outline-none bg-transparent" placeholder="Publisher" value={form.publication || ""} onChange={e => setForm({...form, publication: e.target.value})} />
                 <input className="border-b py-2 text-sm outline-none bg-transparent" placeholder="Category" value={form.category || ""} onChange={e => setForm({...form, category: e.target.value})} />
               </div>
 
-              <div className="grid grid-cols-3 gap-4">
+              <div className="grid grid-cols-3 gap-3">
                 <div>
                   <label className="text-[9px] font-bold text-stone-400 uppercase">Price</label>
                   <input type="number" value={form.price || ""} onChange={e => setForm({...form, price: e.target.value})} className="w-full border-b py-2 outline-none bg-transparent font-bold text-sm" required />
                 </div>
                 <div>
-                  <label className="text-[9px] font-bold text-stone-400 uppercase">Discount%</label>
+                  <label className="text-[9px] font-bold text-stone-400 uppercase">Disc%</label>
                   <input type="number" value={form.discount_percent || 0} onChange={e => setForm({...form, discount_percent: Number(e.target.value)})} className="w-full border-b py-2 text-red-600 outline-none bg-transparent font-bold text-sm" />
                 </div>
                 <div>
-                  {/* STOCK FIELD ADDED TO FORM */}
-                  <label className="text-[9px] font-bold text-stone-400 uppercase tracking-tighter">Initial Stock</label>
+                  <label className="text-[9px] font-bold text-stone-400 uppercase">Stock</label>
                   <input type="number" value={form.stock_count || 0} onChange={e => setForm({...form, stock_count: Number(e.target.value)})} className="w-full border-b py-2 text-teal-600 outline-none bg-transparent font-bold text-sm" />
                 </div>
               </div>
 
-              <textarea className="w-full border p-3 text-xs bg-stone-50 outline-none h-16" placeholder="Book Summary..." value={form.description || ""} onChange={e => setForm({...form, description: e.target.value})} />
+              <textarea className="w-full border p-3 text-xs bg-stone-50 outline-none h-20" placeholder="Book Summary..." value={form.description || ""} onChange={e => setForm({...form, description: e.target.value})} />
 
-              <div className="flex gap-2 pt-2">
-                <button type="submit" className="flex-[2] bg-black text-white py-4 text-[11px] font-bold uppercase tracking-widest hover:bg-stone-800 transition-all">
+              <div className="flex flex-col sm:flex-row gap-2 pt-2">
+                <button type="submit" className="flex-[2] bg-black text-white py-4 text-[11px] font-bold uppercase tracking-widest hover:bg-stone-800 transition-all rounded-sm">
                   {loading ? "Saving..." : editingId ? "Update Record" : "Save Entry"}
                 </button>
                 {editingId && (
-                  <button type="button" onClick={resetForm} className="flex-1 border border-stone-200 py-4 text-[11px] font-bold uppercase tracking-widest hover:bg-stone-100 transition-colors">Cancel</button>
+                  <button type="button" onClick={resetForm} className="flex-1 border border-stone-200 py-4 text-[11px] font-bold uppercase tracking-widest hover:bg-stone-100 transition-colors rounded-sm">Cancel</button>
                 )}
               </div>
             </form>
           </section>
 
           {/* LIST SECTION */}
-          <section className="lg:col-span-7 space-y-4">
+          <section className="lg:col-span-7 space-y-4 order-2 lg:order-2">
             <h3 className="text-[10px] font-black uppercase text-stone-400 italic tracking-widest">Recent Inventory ({books.length})</h3>
-            <div className="grid gap-4">
+            <div className="grid gap-3">
               {books.map(book => (
-                <div key={book.id} className="bg-white p-4 flex gap-4 border border-stone-200 shadow-sm items-center transition-all hover:border-teal-200 group">
-                  <img src={book.image_url} className="w-14 h-20 object-cover rounded-sm shadow-sm" alt={book.title} />
-                  <div className="flex-1">
-                    <h4 className="font-serif text-base font-bold text-stone-800">{book.title}</h4>
-                    <p className="text-[10px] text-teal-600 font-bold uppercase tracking-tighter">{book.authors?.name || "Unknown Author"}</p>
-                    <p className="font-bold text-stone-900 mt-1 text-sm">₹{book.price} <span className="ml-2 text-[9px] text-stone-400 font-normal">Stock: {book.stock_count || 0}</span></p>
+                <div key={book.id} className="bg-white p-3 md:p-4 flex gap-3 md:gap-4 border border-stone-200 shadow-sm items-center transition-all">
+                  <img src={book.image_url} className="w-12 h-16 md:w-14 md:h-20 object-cover rounded-sm shadow-sm shrink-0" alt={book.title} />
+                  <div className="flex-1 min-w-0">
+                    <h4 className="font-serif text-sm md:text-base font-bold text-stone-800 truncate">{book.title}</h4>
+                    <p className="text-[9px] text-teal-600 font-bold uppercase tracking-tighter truncate">{book.authors?.name || "Unknown Author"}</p>
+                    <p className="font-bold text-stone-900 mt-0.5 text-xs md:text-sm">₹{book.price} <span className="ml-2 text-[9px] text-stone-400 font-normal">Stock: {book.stock_count || 0}</span></p>
                   </div>
-                  <div className="flex items-center">
-                    <button className="text-stone-400 text-[10px] font-black uppercase hover:text-teal-600 transition-colors" onClick={() => { setForm(book); setEditingId(book.id); window.scrollTo({ top: 0, behavior: 'smooth' }); }}>
+                  <div className="flex flex-col md:flex-row gap-2 md:gap-4 items-end md:items-center">
+                    <button className="text-stone-400 text-[10px] font-black uppercase hover:text-teal-600" onClick={() => { setForm(book); setEditingId(book.id); window.scrollTo({ top: 0, behavior: 'smooth' }); }}>
                       Edit
                     </button>
-                    <button 
-                      className="text-red-400 text-[10px] font-black uppercase hover:text-red-600 ml-4 transition-colors" 
-                      onClick={() => handleDelete(book.id)}
-                    >
-                      Delete
+                    <button className="text-red-400 text-[10px] font-black uppercase hover:text-red-600" onClick={() => handleDelete(book.id)}>
+                      Del
                     </button>
                   </div>
                 </div>
@@ -231,30 +203,30 @@ export default function AdminDashboard() {
         </div>
       </div>
 
-      {/* AUTHOR MODAL */}
+      {/* AUTHOR MODAL - Responsive sizing */}
       {showAuthorModal && (
         <div className="fixed inset-0 bg-stone-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-white p-8 max-w-md w-full shadow-2xl border border-stone-200 rounded-sm">
+          <div className="bg-white p-6 md:p-8 max-w-md w-full shadow-2xl border border-stone-200 rounded-sm overflow-y-auto max-h-[90vh]">
             <div className="flex justify-between items-start mb-6 border-b pb-4">
                 <div>
-                  <h2 className="font-serif text-2xl italic">{editingAuthorId ? "Update Author" : "New Author"}</h2>
-                  <p className="text-[9px] font-bold uppercase text-stone-400 tracking-widest">Contributor Archive</p>
+                  <h2 className="font-serif text-xl md:text-2xl italic">{editingAuthorId ? "Update Author" : "New Author"}</h2>
+                  <p className="text-[9px] font-bold uppercase text-stone-400 tracking-widest">Archive</p>
                 </div>
                 <button onClick={() => setShowAuthorModal(false)} className="text-2xl text-stone-300 hover:text-stone-900 transition-colors">×</button>
             </div>
             
             <div className="space-y-5">
-              <div className="max-w-[140px] mx-auto">
+              <div className="max-w-[120px] mx-auto">
                 <ImageCapture label="Portrait" onUpload={(url) => setNewAuthor({...newAuthor, profile_image_url: url})} />
               </div>
               <input className="w-full border-b py-2 text-lg font-serif outline-none bg-transparent" placeholder="Full Name" value={newAuthor.name || ""} onChange={e => setNewAuthor({...newAuthor, name: e.target.value})} />
-              <textarea className="w-full border p-3 text-xs bg-stone-50 h-28 outline-none" placeholder="Author Biography..." value={newAuthor.bio || ""} onChange={e => setNewAuthor({...newAuthor, bio: e.target.value})} />
+              <textarea className="w-full border p-3 text-xs bg-stone-50 h-24 outline-none" placeholder="Biography..." value={newAuthor.bio || ""} onChange={e => setNewAuthor({...newAuthor, bio: e.target.value})} />
               
-              <div className="flex gap-3 pt-4">
-                <button onClick={handleQuickAddAuthor} className="flex-1 bg-teal-600 text-white py-3 text-[10px] font-bold uppercase tracking-widest hover:bg-teal-700 transition-colors">
-                  {saveLoading ? "Saving..." : "Save Profile"}
+              <div className="flex gap-2 pt-4">
+                <button onClick={handleQuickAddAuthor} className="flex-1 bg-teal-600 text-white py-3 text-[10px] font-bold uppercase tracking-widest rounded-sm">
+                  {saveLoading ? "Wait..." : "Save"}
                 </button>
-                <button onClick={() => setShowAuthorModal(false)} className="flex-1 border border-stone-200 py-3 text-[10px] font-bold uppercase text-stone-400 hover:bg-stone-50 transition-colors">Cancel</button>
+                <button onClick={() => setShowAuthorModal(false)} className="flex-1 border border-stone-200 py-3 text-[10px] font-bold uppercase text-stone-400 rounded-sm">Close</button>
               </div>
             </div>
           </div>
