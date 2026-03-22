@@ -7,7 +7,9 @@ import Link from "next/link";
 const INITIAL_FORM = {
   title: "", author: "", author_id: "", publication: "", description: "",
   category: "", price: "", image_url: "", back_image_url: "",
-  collection_name: "General", discount_percent: 0, is_featured: false, is_bestseller: false 
+  collection_name: "General", discount_percent: 0, 
+  stock_count: 0, // Added to match your table column
+  is_featured: false, is_bestseller: false 
 };
 
 const INITIAL_AUTHOR = { name: "", bio: "", profile_image_url: "" };
@@ -77,7 +79,8 @@ export default function AdminDashboard() {
     const payload = { 
       ...cleanFormData, 
       price: Number(form.price), 
-      discount_percent: Number(form.discount_percent) 
+      discount_percent: Number(form.discount_percent),
+      stock_count: Number(form.stock_count) // Ensure it's a number
     };
 
     const { error } = editingId 
@@ -95,7 +98,6 @@ export default function AdminDashboard() {
     setLoading(false);
   }
 
-  // --- NEW DELETE FUNCTIONALITY ---
   async function handleDelete(id: string) {
     if (!confirm("Are you sure you want to delete this book? This action cannot be undone.")) return;
     
@@ -120,6 +122,8 @@ export default function AdminDashboard() {
           </div>
           <nav className="flex gap-3 mt-4 md:mt-0">
             <Link href="/admin" className="px-5 py-2 bg-stone-900 text-white text-[10px] font-bold uppercase rounded-full">Inventory</Link>
+            {/* LINK TO STOCK PAGE ADDED HERE */}
+            <Link href="/admin/stock" className="px-5 py-2 bg-white border border-teal-600 text-teal-600 text-[10px] font-bold uppercase rounded-full hover:bg-teal-50 transition-colors">Stock Analysis</Link>
             <Link href="/admin/banners" className="px-5 py-2 bg-white border text-[10px] font-bold uppercase rounded-full hover:bg-stone-100 transition-colors">Banners</Link>
             <Link href="/admin/authors" className="px-5 py-2 bg-white border text-[10px] font-bold uppercase rounded-full hover:bg-stone-100 transition-colors">Authors</Link>
           </nav>
@@ -135,8 +139,8 @@ export default function AdminDashboard() {
 
             <form onSubmit={handleSubmit} className="space-y-5">
               <div className="grid grid-cols-2 gap-4">
-                <ImageCapture label="Front Cover" onUpload={(url) => setForm({...form, image_url: url})} />
-                <ImageCapture label="Back Cover" onUpload={(url) => setForm({...form, back_image_url: url})} />
+                <ImageCapture label="Front" onUpload={(url) => setForm({...form, image_url: url})} />
+                <ImageCapture label="Back" onUpload={(url) => setForm({...form, back_image_url: url})} />
               </div>
 
               <input 
@@ -159,16 +163,7 @@ export default function AdminDashboard() {
                     <option value="">Select Author...</option>
                     {authors.map(a => <option key={a.id} value={a.id}>{a.name}</option>)}
                   </select>
-                  
-                  {form.author_id && (
-                    <button type="button" onClick={() => {
-                      const a = authors.find(a => a.id === form.author_id);
-                      setNewAuthor({ name: a.name || "", bio: a.bio || "", profile_image_url: a.profile_image_url || "" });
-                      setEditingAuthorId(a.id);
-                      setShowAuthorModal(true);
-                    }} className="text-[10px] font-bold bg-stone-100 px-3 rounded uppercase hover:bg-stone-200 transition-colors">Edit</button>
-                  )}
-                  <button type="button" onClick={() => { setEditingAuthorId(null); setNewAuthor(INITIAL_AUTHOR); setShowAuthorModal(true); }} className="text-[10px] font-bold bg-teal-50 text-teal-700 px-3 rounded uppercase hover:bg-teal-100 transition-colors">+ New</button>
+                  <button type="button" onClick={() => { setEditingAuthorId(null); setNewAuthor(INITIAL_AUTHOR); setShowAuthorModal(true); }} className="text-[10px] font-bold bg-teal-50 text-teal-700 px-3 rounded uppercase">+ New</button>
                 </div>
               </div>
 
@@ -177,18 +172,23 @@ export default function AdminDashboard() {
                 <input className="border-b py-2 text-sm outline-none bg-transparent" placeholder="Category" value={form.category || ""} onChange={e => setForm({...form, category: e.target.value})} />
               </div>
 
-              <textarea className="w-full border p-3 text-xs bg-stone-50 outline-none h-20 focus:bg-white transition-colors" placeholder="Book Summary..." value={form.description || ""} onChange={e => setForm({...form, description: e.target.value})} />
-
-              <div className="grid grid-cols-2 gap-6">
+              <div className="grid grid-cols-3 gap-4">
                 <div>
-                  <label className="text-[9px] font-bold text-stone-400 uppercase">Price (₹)</label>
-                  <input type="number" value={form.price || ""} onChange={e => setForm({...form, price: e.target.value})} className="w-full border-b py-2 outline-none bg-transparent font-bold" required />
+                  <label className="text-[9px] font-bold text-stone-400 uppercase">Price</label>
+                  <input type="number" value={form.price || ""} onChange={e => setForm({...form, price: e.target.value})} className="w-full border-b py-2 outline-none bg-transparent font-bold text-sm" required />
                 </div>
                 <div>
-                  <label className="text-[9px] font-bold text-stone-400 uppercase">Discount (%)</label>
-                  <input type="number" value={form.discount_percent || 0} onChange={e => setForm({...form, discount_percent: Number(e.target.value)})} className="w-full border-b py-2 text-red-600 outline-none bg-transparent font-bold" />
+                  <label className="text-[9px] font-bold text-stone-400 uppercase">Discount%</label>
+                  <input type="number" value={form.discount_percent || 0} onChange={e => setForm({...form, discount_percent: Number(e.target.value)})} className="w-full border-b py-2 text-red-600 outline-none bg-transparent font-bold text-sm" />
+                </div>
+                <div>
+                  {/* STOCK FIELD ADDED TO FORM */}
+                  <label className="text-[9px] font-bold text-stone-400 uppercase tracking-tighter">Initial Stock</label>
+                  <input type="number" value={form.stock_count || 0} onChange={e => setForm({...form, stock_count: Number(e.target.value)})} className="w-full border-b py-2 text-teal-600 outline-none bg-transparent font-bold text-sm" />
                 </div>
               </div>
+
+              <textarea className="w-full border p-3 text-xs bg-stone-50 outline-none h-16" placeholder="Book Summary..." value={form.description || ""} onChange={e => setForm({...form, description: e.target.value})} />
 
               <div className="flex gap-2 pt-2">
                 <button type="submit" className="flex-[2] bg-black text-white py-4 text-[11px] font-bold uppercase tracking-widest hover:bg-stone-800 transition-all">
@@ -211,13 +211,12 @@ export default function AdminDashboard() {
                   <div className="flex-1">
                     <h4 className="font-serif text-base font-bold text-stone-800">{book.title}</h4>
                     <p className="text-[10px] text-teal-600 font-bold uppercase tracking-tighter">{book.authors?.name || "Unknown Author"}</p>
-                    <p className="font-bold text-stone-900 mt-1">₹{book.price}</p>
+                    <p className="font-bold text-stone-900 mt-1 text-sm">₹{book.price} <span className="ml-2 text-[9px] text-stone-400 font-normal">Stock: {book.stock_count || 0}</span></p>
                   </div>
                   <div className="flex items-center">
                     <button className="text-stone-400 text-[10px] font-black uppercase hover:text-teal-600 transition-colors" onClick={() => { setForm(book); setEditingId(book.id); window.scrollTo({ top: 0, behavior: 'smooth' }); }}>
                       Edit
                     </button>
-                    {/* DELETE BUTTON ADDED HERE */}
                     <button 
                       className="text-red-400 text-[10px] font-black uppercase hover:text-red-600 ml-4 transition-colors" 
                       onClick={() => handleDelete(book.id)}
@@ -249,7 +248,7 @@ export default function AdminDashboard() {
                 <ImageCapture label="Portrait" onUpload={(url) => setNewAuthor({...newAuthor, profile_image_url: url})} />
               </div>
               <input className="w-full border-b py-2 text-lg font-serif outline-none bg-transparent" placeholder="Full Name" value={newAuthor.name || ""} onChange={e => setNewAuthor({...newAuthor, name: e.target.value})} />
-              <textarea className="w-full border p-3 text-xs bg-stone-50 h-28 outline-none focus:bg-white transition-colors" placeholder="Author Biography..." value={newAuthor.bio || ""} onChange={e => setNewAuthor({...newAuthor, bio: e.target.value})} />
+              <textarea className="w-full border p-3 text-xs bg-stone-50 h-28 outline-none" placeholder="Author Biography..." value={newAuthor.bio || ""} onChange={e => setNewAuthor({...newAuthor, bio: e.target.value})} />
               
               <div className="flex gap-3 pt-4">
                 <button onClick={handleQuickAddAuthor} className="flex-1 bg-teal-600 text-white py-3 text-[10px] font-bold uppercase tracking-widest hover:bg-teal-700 transition-colors">
