@@ -12,6 +12,7 @@ export default function Home() {
   const [currentSlide, setCurrentSlide] = useState(0);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
+  const [selectedCategory, setSelectedCategory] = useState("All");
 
   useEffect(() => {
     async function fetchData() {
@@ -43,14 +44,26 @@ export default function Home() {
     return () => clearInterval(timer);
   }, [banners]);
 
-  const executeSearch = useCallback((query: string) => {
+  // ✅ DYNAMIC CATEGORIES LIST
+  const categories = ["All", ...new Set(allBooks.map((b) => b.category).filter(Boolean))] as string[];
+
+  // ✅ COMBINED FILTER LOGIC (Maintains the priority sorting from old code)
+  const applyFilters = useCallback((query: string, category: string) => {
+    let baseResults = [...allBooks];
+
+    // Filter by Category first
+    if (category !== "All") {
+      baseResults = baseResults.filter(book => book.category === category);
+    }
+
+    // Then apply Search logic with priority
     if (!query.trim()) {
-      setFilteredBooks(allBooks);
+      setFilteredBooks(baseResults);
       return;
     }
 
     const q = query.toLowerCase();
-    const results = allBooks
+    const results = baseResults
       .map(book => {
         let priority = 0;
         if (book.title?.toLowerCase().includes(q)) priority = 4;
@@ -69,7 +82,12 @@ export default function Home() {
   const onSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const val = e.target.value;
     setSearchQuery(val);
-    executeSearch(val);
+    applyFilters(val, selectedCategory);
+  };
+
+  const handleCategoryClick = (cat: string) => {
+    setSelectedCategory(cat);
+    applyFilters(searchQuery, cat);
   };
 
   if (loading) return (
@@ -157,7 +175,7 @@ export default function Home() {
             </div>
           </motion.div>
 
-          {/* Slide Indicators - Hidden on very small screens to save space */}
+          {/* Slide Indicators */}
           {banners.length > 1 && (
             <div className="absolute bottom-6 md:bottom-10 flex gap-2 md:gap-3">
               {banners.map((_, idx) => (
@@ -172,8 +190,30 @@ export default function Home() {
         </div>
       </section>
 
-      {/* ✅ BEST SELLERS SECTION */}
-      {bestSellers.length > 0 && !searchQuery && (
+      {/* ✅ CATEGORY FILTER BAR (New Integration) */}
+      <nav className="sticky top-0 z-40 bg-white border-b border-stone-100 shadow-sm overflow-x-auto no-scrollbar">
+        <div className="max-w-7xl mx-auto px-6 py-4 flex items-center gap-4 whitespace-nowrap">
+          <span className="text-[10px] font-black uppercase tracking-widest text-stone-400 border-r pr-4 border-stone-200">
+            Categories
+          </span>
+          {categories.map((cat) => (
+            <button
+              key={cat}
+              onClick={() => handleCategoryClick(cat)}
+              className={`px-4 py-1.5 rounded-full text-[10px] font-bold uppercase tracking-widest transition-all ${
+                selectedCategory === cat 
+                ? 'bg-teal-600 text-white shadow-md' 
+                : 'bg-stone-100 text-stone-500 hover:bg-stone-200'
+              }`}
+            >
+              {cat}
+            </button>
+          ))}
+        </div>
+      </nav>
+
+      {/* ✅ BEST SELLERS SECTION (Only visible on "All" and no search) */}
+      {selectedCategory === "All" && bestSellers.length > 0 && !searchQuery && (
         <section className="bg-white py-10 md:py-20 border-b border-stone-100">
           <div className="max-w-7xl mx-auto px-6">
             <div className="flex items-center gap-4 md:gap-6 mb-8 md:mb-12">
@@ -198,42 +238,18 @@ export default function Home() {
         </section>
       )}
 
-      {/* STICKY CATEGORY NAV */}
-      <nav className="sticky top-0 z-40 bg-white/90 backdrop-blur-xl border-b border-stone-100 overflow-x-auto no-scrollbar shadow-sm">
-        <div className="max-w-7xl mx-auto px-6 py-3 md:py-5 flex gap-6 md:gap-10 items-center justify-start md:justify-center whitespace-nowrap">
-          <button 
-            onClick={() => {setSearchQuery(""); setFilteredBooks(allBooks);}} 
-            className={`text-[10px] md:text-[11px] font-bold uppercase tracking-[0.2em] transition-all ${
-              !searchQuery ? 'text-stone-900 border-b-2 border-teal-500 pb-1' : 'text-stone-400 hover:text-stone-600'
-            }`}
-          >
-            All Books
-          </button>
-
-          {collections.map(col => (
-            <a 
-              key={col} 
-              href={`#${col}`} 
-              className="text-[10px] md:text-[11px] font-bold uppercase tracking-[0.2em] text-stone-400 hover:text-teal-600 transition-colors"
-            >
-              {col}
-            </a>
-          ))}
-        </div>
-      </nav>
-
       {/* BOOKS GRID */}
       <div className="max-w-7xl mx-auto px-6 py-10 md:py-16 space-y-12 md:space-y-24">
         {filteredBooks.length === 0 ? (
           <div className="py-20 md:py-32 text-center">
             <p className="text-stone-400 font-serif italic text-xl md:text-2xl">
-              "No treasures found..."
+              "No treasures found in this selection..."
             </p>
             <button 
-              onClick={() => {setSearchQuery(""); setFilteredBooks(allBooks);}} 
+              onClick={() => {setSearchQuery(""); setSelectedCategory("All"); setFilteredBooks(allBooks);}} 
               className="mt-4 text-teal-600 text-[9px] font-black uppercase tracking-widest hover:tracking-[0.2em] transition-all underline underline-offset-8"
             >
-              Reset Library
+              Reset Filters
             </button>
           </div>
         ) : (
