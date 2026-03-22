@@ -6,12 +6,15 @@ import Link from "next/link";
 export default function StockManagement() {
   const [books, setBooks] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  
+  // Filtering States
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("All");
-  
-  // Updated Sort State
+  const [selectedPublication, setSelectedPublication] = useState("All");
   const [sortBy, setSortBy] = useState("title_asc"); 
   const [filterLowStock, setFilterLowStock] = useState(false);
+  
+  // Stock Input State
   const [stockInputs, setStockInputs] = useState<{ [key: string]: string }>({});
 
   useEffect(() => {
@@ -22,7 +25,7 @@ export default function StockManagement() {
     setLoading(true);
     const { data, error } = await supabase
       .from("books")
-      .select("id, title, price, stock_count, category, publication")
+      .select("id, title, price, stock_count, category, publication, image_url")
       .order("title", { ascending: true });
 
     if (!error) setBooks(data || []);
@@ -44,17 +47,18 @@ export default function StockManagement() {
       setBooks(prev => prev.map(b => b.id === id ? { ...b, stock_count: newCount } : b));
       setStockInputs(prev => ({ ...prev, [id]: "" }));
     } else {
-      alert("Error: " + error.message);
+      alert("Update failed: " + error.message);
     }
   }
 
-  // --- REFINED FILTER & SORT LOGIC ---
-  const processedBooks = books
+  // --- COMPREHENSIVE FILTER & SORT ---
+  const filteredBooks = books
     .filter(book => {
       const matchesSearch = book.title?.toLowerCase().includes(searchTerm.toLowerCase());
       const matchesCategory = selectedCategory === "All" || book.category === selectedCategory;
+      const matchesPub = selectedPublication === "All" || book.publication === selectedPublication;
       const matchesLowStock = filterLowStock ? (book.stock_count || 0) < 5 : true;
-      return matchesSearch && matchesCategory && matchesLowStock;
+      return matchesSearch && matchesCategory && matchesPub && matchesLowStock;
     })
     .sort((a, b) => {
       switch (sortBy) {
@@ -66,118 +70,121 @@ export default function StockManagement() {
       }
     });
 
+  // Unique lists for dropdowns
+  const categories = ["All", ...new Set(books.map(b => b.category).filter(Boolean))];
+  const publications = ["All", ...new Set(books.map(b => b.publication).filter(Boolean))];
+
   return (
     <div className="p-4 md:p-8 bg-stone-50 min-h-screen text-stone-900 font-sans">
       <div className="max-w-7xl mx-auto">
         
+        {/* HEADER */}
         <header className="flex flex-col md:flex-row justify-between items-start md:items-end mb-8 pb-6 border-b border-stone-200">
           <div>
-            <h1 className="text-2xl md:text-4xl font-serif font-bold italic text-stone-800">Inventory Controller</h1>
-            <p className="text-[10px] font-black uppercase tracking-[0.3em] text-stone-400 mt-1">Stock & Pricing Management</p>
+            <h1 className="text-2xl md:text-4xl font-serif font-bold italic text-stone-800">Visual Inventory</h1>
+            <p className="text-[10px] font-black uppercase tracking-[0.3em] text-stone-400 mt-1">Stock, Media & Archives</p>
           </div>
           <Link href="/admin" className="mt-4 md:mt-0 text-[10px] font-bold uppercase border-b border-stone-900 pb-1">
-            ← Back to Dashboard
+            ← Dashboard
           </Link>
         </header>
 
-        {/* REFINED FILTERS & SORTING */}
-        <section className="bg-white p-4 md:p-6 border border-stone-200 shadow-sm rounded-sm mb-8 space-y-6">
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-            {/* Search */}
-            <div className="md:col-span-2">
-              <label className="text-[9px] font-bold uppercase text-stone-400 mb-1 block">Search Title</label>
+        {/* ADVANCED FILTERING BAR */}
+        <section className="bg-white p-4 md:p-6 border border-stone-200 shadow-sm rounded-sm mb-8">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 items-end">
+            
+            <div className="lg:col-span-1">
+              <label className="text-[9px] font-bold uppercase text-stone-400 mb-1 block">Search</label>
               <input 
                 type="text" 
-                placeholder="Find a book..." 
-                className="w-full border-b border-stone-200 py-2 outline-none focus:border-stone-900 bg-transparent font-serif italic text-lg"
+                placeholder="Title..." 
+                className="w-full border-b py-2 outline-none focus:border-stone-900 bg-transparent text-sm"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
               />
             </div>
 
-            {/* Category */}
             <div>
               <label className="text-[9px] font-bold uppercase text-stone-400 mb-1 block">Category</label>
-              <select 
-                className="w-full border-b border-stone-200 py-2 outline-none bg-transparent text-sm h-10"
-                value={selectedCategory}
-                onChange={(e) => setSelectedCategory(e.target.value)}
-              >
-                <option value="All">All Categories</option>
-                {[...new Set(books.map(b => b.category).filter(Boolean))].map(cat => (
-                  <option key={cat} value={cat}>{cat}</option>
-                ))}
+              <select className="w-full border-b py-2 outline-none bg-transparent text-xs" value={selectedCategory} onChange={(e) => setSelectedCategory(e.target.value)}>
+                {categories.map(c => <option key={c} value={c}>{c}</option>)}
               </select>
             </div>
 
-            {/* Updated Sorting Dropdown */}
             <div>
-              <label className="text-[9px] font-bold uppercase text-stone-400 mb-1 block">Sort Inventory By</label>
-              <select 
-                className="w-full border-b border-stone-200 py-2 outline-none bg-transparent text-sm font-bold h-10 text-teal-700"
-                value={sortBy}
-                onChange={(e) => setSortBy(e.target.value)}
-              >
-                <option value="title_asc">Title (A-Z)</option>
-                <option value="stock_asc">Stock: Low to High ↑</option>
-                <option value="stock_desc">Stock: High to Low ↓</option>
-                <option value="price_asc">Price: Low to High ↑</option>
-                <option value="price_desc">Price: High to Low ↓</option>
+              <label className="text-[9px] font-bold uppercase text-stone-400 mb-1 block">Publisher</label>
+              <select className="w-full border-b py-2 outline-none bg-transparent text-xs" value={selectedPublication} onChange={(e) => setSelectedPublication(e.target.value)}>
+                {publications.map(p => <option key={p} value={p}>{p}</option>)}
               </select>
             </div>
-          </div>
 
-          <div className="flex items-center gap-2 pt-2 border-t border-stone-50">
-            <input 
-              type="checkbox" 
-              id="lowStock" 
-              checked={filterLowStock} 
-              onChange={(e) => setFilterLowStock(e.target.checked)}
-              className="w-4 h-4 accent-stone-800"
-            />
-            <label htmlFor="lowStock" className="text-[10px] font-bold uppercase text-stone-600 cursor-pointer">
-              Show critical low stock only ({`<`} 5 units)
-            </label>
+            <div>
+              <label className="text-[9px] font-bold uppercase text-stone-400 mb-1 block">Sort By</label>
+              <select className="w-full border-b py-2 outline-none bg-transparent text-xs font-bold text-teal-700" value={sortBy} onChange={(e) => setSortBy(e.target.value)}>
+                <option value="title_asc">Title (A-Z)</option>
+                <option value="stock_asc">Stock: Low-High</option>
+                <option value="stock_desc">Stock: High-Low</option>
+                <option value="price_asc">Price: Low-High</option>
+                <option value="price_desc">Price: High-Low</option>
+              </select>
+            </div>
+
+            <div className="flex items-center gap-2 mb-2">
+              <input type="checkbox" id="lowStock" checked={filterLowStock} onChange={(e) => setFilterLowStock(e.target.checked)} className="accent-stone-800" />
+              <label htmlFor="lowStock" className="text-[9px] font-bold uppercase text-stone-600 cursor-pointer whitespace-nowrap">Low Stock Only</label>
+            </div>
           </div>
         </section>
 
-        {/* LISTING */}
-        <div className="space-y-4">
+        {/* BOOK LIST */}
+        <div className="grid gap-4">
           {loading ? (
-            <div className="p-20 text-center italic text-stone-400 font-serif">Updating Archive...</div>
+            <div className="p-20 text-center italic text-stone-400 font-serif">Scanning Shelves...</div>
           ) : (
-            processedBooks.map((book) => (
-              <div key={book.id} className="bg-white p-4 md:p-6 border border-stone-200 rounded-sm shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4 transition-all hover:border-stone-300">
+            filteredBooks.map((book) => (
+              <div key={book.id} className="bg-white border border-stone-200 rounded-sm shadow-sm overflow-hidden flex flex-col sm:flex-row transition-all hover:shadow-md">
                 
-                <div className="flex-1">
-                  <h3 className="font-serif font-bold text-lg text-stone-800">{book.title}</h3>
-                  <div className="flex gap-3 text-[10px] font-bold uppercase text-stone-400 mt-1 items-center">
-                    <span>{book.publication}</span>
-                    <span className="w-1 h-1 bg-stone-200 rounded-full"></span>
-                    <span className="text-teal-600">{book.category}</span>
-                  </div>
-                  <div className="mt-3 flex items-center gap-4">
-                    <p className="text-sm font-mono font-bold bg-stone-100 px-2 py-1 rounded">
-                      ₹{book.price}
-                    </p>
-                    <p className="text-xs font-bold uppercase text-stone-500">
-                      In Stock: <span className={book.stock_count < 5 ? "text-red-500 underline" : "text-stone-900"}>{book.stock_count}</span>
-                    </p>
-                  </div>
+                {/* Book Cover Image */}
+                <div className="w-full sm:w-24 h-32 sm:h-auto bg-stone-100 shrink-0">
+                  <img 
+                    src={book.image_url || "/placeholder-book.png"} 
+                    alt={book.title} 
+                    className="w-full h-full object-cover"
+                  />
                 </div>
 
-                <div className="flex flex-wrap items-center gap-3 bg-stone-50 md:bg-transparent p-3 md:p-0 border-t md:border-t-0 border-stone-100">
-                  <div className="flex gap-2 items-center w-full sm:w-auto">
+                {/* Info & Controls */}
+                <div className="p-4 flex-1 flex flex-col md:flex-row justify-between gap-4">
+                  <div className="flex-1 min-w-0">
+                    <h3 className="font-serif font-bold text-base text-stone-800 truncate">{book.title}</h3>
+                    <div className="flex flex-wrap gap-x-3 gap-y-1 text-[9px] font-bold uppercase text-stone-400 mt-1">
+                      <span className="text-stone-900">₹{book.price}</span>
+                      <span>{book.publication}</span>
+                      <span className="text-teal-600">{book.category}</span>
+                    </div>
+                    
+                    {/* Stock Status Bar */}
+                    <div className="mt-3 w-full max-w-[200px] bg-stone-100 h-1.5 rounded-full overflow-hidden">
+                       <div 
+                        className={`h-full transition-all duration-500 ${book.stock_count < 5 ? 'bg-red-500' : 'bg-teal-600'}`}
+                        style={{ width: `${Math.min((book.stock_count / 20) * 100, 100)}%` }}
+                       />
+                    </div>
+                    <p className="text-[10px] mt-1 font-bold">In Stock: {book.stock_count}</p>
+                  </div>
+
+                  {/* Bulk Actions */}
+                  <div className="flex items-center gap-2 self-start md:self-center">
                     <input 
                       type="number" 
                       placeholder="+/- Qty" 
-                      className="w-24 border border-stone-300 rounded-md px-3 py-2 text-sm text-center outline-none focus:ring-1 focus:ring-stone-800 bg-white"
+                      className="w-20 border border-stone-300 rounded-md px-2 py-2 text-xs text-center outline-none focus:ring-1 focus:ring-stone-800"
                       value={stockInputs[book.id] || ""}
                       onChange={(e) => handleInputChange(book.id, e.target.value)}
                     />
                     <button 
                       onClick={() => handleBulkUpdate(book.id, book.stock_count)}
-                      className="flex-1 sm:flex-none bg-stone-900 text-white text-[10px] font-bold uppercase px-6 py-2.5 rounded-md hover:bg-stone-700 transition-colors shadow-sm"
+                      className="bg-stone-900 text-white text-[9px] font-bold uppercase px-4 py-2.5 rounded-md hover:bg-stone-700 transition-colors"
                     >
                       Update
                     </button>
@@ -187,13 +194,13 @@ export default function StockManagement() {
               </div>
             ))
           )}
-          
-          {!loading && processedBooks.length === 0 && (
-            <div className="p-20 text-center text-stone-400 font-serif italic border-2 border-dashed border-stone-200 rounded-sm">
-              No matching records found in the library.
-            </div>
-          )}
         </div>
+
+        {!loading && filteredBooks.length === 0 && (
+          <div className="mt-10 p-20 text-center text-stone-400 border-2 border-dashed border-stone-200 rounded-sm italic">
+            No records match these filters.
+          </div>
+        )}
       </div>
     </div>
   );
