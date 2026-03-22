@@ -25,6 +25,7 @@ export default function AdminDashboard() {
 
   const [newAuthor, setNewAuthor] = useState(INITIAL_AUTHOR); 
   const [form, setForm] = useState(INITIAL_FORM);
+  const [quickStockAdd, setQuickStockAdd] = useState(""); 
 
   useEffect(() => { 
     fetchData();
@@ -42,6 +43,22 @@ export default function AdminDashboard() {
   const resetForm = () => {
     setForm(INITIAL_FORM);
     setEditingId(null);
+    setQuickStockAdd("");
+  };
+
+  const handleStockAdjustment = (amount: number) => {
+    setForm(prev => ({
+      ...prev,
+      stock_count: Math.max(0, Number(prev.stock_count) + amount)
+    }));
+  };
+
+  const applyQuickStock = () => {
+    const val = parseInt(quickStockAdd);
+    if (!isNaN(val)) {
+      handleStockAdjustment(val);
+      setQuickStockAdd("");
+    }
   };
 
   async function handleQuickAddAuthor() {
@@ -66,8 +83,17 @@ export default function AdminDashboard() {
     e.preventDefault();
     if (!form.image_url || !form.author_id) return alert("Missing Front Image or Author!");
     setLoading(true);
+    
+    // Deconstruct to remove nested objects and IDs not meant for the database payload
     const { authors: nestedAuthors, id, created_at, ...cleanFormData } = form as any;
-    const payload = { ...cleanFormData, price: Number(form.price), discount_percent: Number(form.discount_percent), stock_count: Number(form.stock_count) };
+    
+    const payload = { 
+      ...cleanFormData, 
+      price: Number(form.price), 
+      discount_percent: Number(form.discount_percent), 
+      stock_count: Number(form.stock_count),
+      is_bestseller: Boolean(form.is_bestseller) // Ensure it's a boolean
+    };
 
     const { error } = editingId 
       ? await supabase.from("books").update(payload).eq("id", editingId)
@@ -89,15 +115,6 @@ export default function AdminDashboard() {
 
   return (
     <div className="p-4 md:p-8 bg-stone-50 min-h-screen font-sans text-stone-900">
-      {/* Global CSS for Number Inputs to show arrows on mobile/web */}
-      <style jsx global>{`
-        input[type='number']::-webkit-inner-spin-button,
-        input[type='number']::-webkit-outer-spin-button {
-          -webkit-appearance: inner-spin-button !important;
-          opacity: 1 !important;
-        }
-      `}</style>
-
       <div className="max-w-7xl mx-auto">
         
         {/* HEADER */}
@@ -122,7 +139,7 @@ export default function AdminDashboard() {
               {editingId ? "Edit Book Record" : "New Library Entry"}
             </h2>
 
-            <form onSubmit={handleSubmit} className="space-y-5">
+            <form onSubmit={handleSubmit} className="space-y-6">
               <div className="grid grid-cols-2 gap-3 md:gap-4">
                 <ImageCapture label="Front" onUpload={(url) => setForm({...form, image_url: url})} />
                 <ImageCapture label="Back" onUpload={(url) => setForm({...form, back_image_url: url})} />
@@ -152,47 +169,71 @@ export default function AdminDashboard() {
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <input className="border-b py-2 text-sm outline-none bg-transparent" placeholder="Publisher" value={form.publication || ""} onChange={e => setForm({...form, publication: e.target.value})} />
-                <input className="border-b py-2 text-sm outline-none bg-transparent" placeholder="Category" value={form.category || ""} onChange={e => setForm({...form, category: e.target.value})} />
+              <div className="grid grid-cols-2 gap-4">
+                <div className="flex flex-col">
+                  <label className="text-[9px] font-bold text-stone-400 uppercase">Price (₹)</label>
+                  <input type="number" value={form.price || ""} onChange={e => setForm({...form, price: e.target.value})} className="border-b py-2 outline-none bg-transparent font-bold text-sm" required />
+                </div>
+                <div className="flex flex-col">
+                  <label className="text-[9px] font-bold text-stone-400 uppercase">Discount %</label>
+                  <input type="number" value={form.discount_percent || 0} onChange={e => setForm({...form, discount_percent: Number(e.target.value)})} className="border-b py-2 text-red-600 outline-none bg-transparent font-bold text-sm" />
+                </div>
               </div>
 
-              <div className="grid grid-cols-3 gap-3">
-                <div className="flex flex-col">
-                  <label className="text-[9px] font-bold text-stone-400 uppercase">Price</label>
-                  <input 
-                    type="number" 
-                    value={form.price || ""} 
-                    onChange={e => setForm({...form, price: e.target.value})} 
-                    className="w-full border-b py-2 outline-none bg-transparent font-bold text-sm" 
-                    required 
-                  />
+              {/* BESTSELLER TICK BOX */}
+              <div className="flex items-center gap-3 p-3 bg-stone-50 border border-dashed border-stone-300 rounded">
+                <input 
+                  type="checkbox" 
+                  id="bestseller"
+                  checked={form.is_bestseller || false}
+                  onChange={e => setForm({...form, is_bestseller: e.target.checked})}
+                  className="w-5 h-5 accent-teal-600 cursor-pointer"
+                />
+                <label htmlFor="bestseller" className="text-xs font-bold uppercase tracking-wider text-stone-700 cursor-pointer select-none">
+                  Mark as Bestseller
+                </label>
+              </div>
+
+              {/* ENHANCED STOCK CONTROL */}
+              <div className="bg-stone-50 p-4 rounded-md border border-stone-200 space-y-4">
+                <div className="flex items-center justify-between">
+                  <label className="text-[10px] font-black text-stone-500 uppercase tracking-widest">Stock Inventory</label>
+                  <span className="text-xl font-black text-teal-600">{form.stock_count}</span>
                 </div>
-                <div className="flex flex-col">
-                  <label className="text-[9px] font-bold text-stone-400 uppercase">Disc%</label>
+
+                <div className="flex items-center gap-3">
+                  <button type="button" onClick={() => handleStockAdjustment(-1)} className="w-12 h-12 flex items-center justify-center bg-white border border-stone-300 rounded-full text-xl font-bold shadow-sm active:scale-95">-</button>
                   <input 
                     type="number" 
-                    value={form.discount_percent || 0} 
-                    onChange={e => setForm({...form, discount_percent: Number(e.target.value)})} 
-                    className="w-full border-b py-2 text-red-600 outline-none bg-transparent font-bold text-sm" 
+                    value={form.stock_count} 
+                    onChange={e => setForm({...form, stock_count: Number(e.target.value)})}
+                    className="flex-1 bg-transparent text-center font-bold text-lg border-b border-stone-300 outline-none"
                   />
+                  <button type="button" onClick={() => handleStockAdjustment(1)} className="w-12 h-12 flex items-center justify-center bg-white border border-stone-300 rounded-full text-xl font-bold shadow-sm active:scale-95">+</button>
                 </div>
-                <div className="flex flex-col">
-                  <label className="text-[9px] font-bold text-stone-400 uppercase">Stock</label>
-                  {/* Stock Input with forced arrow display */}
+
+                <div className="flex gap-2 pt-2">
                   <input 
                     type="number" 
-                    value={form.stock_count || 0} 
-                    onChange={e => setForm({...form, stock_count: Number(e.target.value)})} 
-                    className="w-full border-b py-2 text-teal-600 outline-none bg-transparent font-bold text-sm"
+                    placeholder="Add multiple (e.g. 50)" 
+                    value={quickStockAdd}
+                    onChange={(e) => setQuickStockAdd(e.target.value)}
+                    className="flex-1 text-[11px] p-2 border rounded bg-white outline-none"
                   />
+                  <button 
+                    type="button" 
+                    onClick={applyQuickStock}
+                    className="bg-stone-800 text-white px-4 py-2 text-[10px] font-bold uppercase rounded shadow-sm active:opacity-80"
+                  >
+                    Add
+                  </button>
                 </div>
               </div>
 
               <textarea className="w-full border p-3 text-xs bg-stone-50 outline-none h-20" placeholder="Book Summary..." value={form.description || ""} onChange={e => setForm({...form, description: e.target.value})} />
 
               <div className="flex flex-col sm:flex-row gap-2 pt-2">
-                <button type="submit" className="flex-[2] bg-black text-white py-4 text-[11px] font-bold uppercase tracking-widest hover:bg-stone-800 transition-all rounded-sm">
+                <button type="submit" className="flex-[2] bg-black text-white py-4 text-[11px] font-bold uppercase tracking-widest hover:bg-stone-800 transition-all rounded-sm shadow-md">
                   {loading ? "Saving..." : editingId ? "Update Record" : "Save Entry"}
                 </button>
                 {editingId && (
@@ -207,7 +248,12 @@ export default function AdminDashboard() {
             <h3 className="text-[10px] font-black uppercase text-stone-400 italic tracking-widest">Recent Inventory ({books.length})</h3>
             <div className="grid gap-3">
               {books.map(book => (
-                <div key={book.id} className="bg-white p-3 md:p-4 flex gap-3 md:gap-4 border border-stone-200 shadow-sm items-center transition-all">
+                <div key={book.id} className="relative bg-white p-3 md:p-4 flex gap-3 md:gap-4 border border-stone-200 shadow-sm items-center transition-all overflow-hidden">
+                  {/* Bestseller Badge in list */}
+                  {book.is_bestseller && (
+                    <div className="absolute top-0 right-0 bg-yellow-400 text-[8px] font-black uppercase px-2 py-0.5 rounded-bl-sm shadow-sm">Bestseller</div>
+                  )}
+                  
                   <img src={book.image_url} className="w-12 h-16 md:w-14 md:h-20 object-cover rounded-sm shadow-sm shrink-0" alt={book.title} />
                   <div className="flex-1 min-w-0">
                     <h4 className="font-serif text-sm md:text-base font-bold text-stone-800 truncate">{book.title}</h4>
@@ -249,7 +295,7 @@ export default function AdminDashboard() {
               <textarea className="w-full border p-3 text-xs bg-stone-50 h-24 outline-none" placeholder="Biography..." value={newAuthor.bio || ""} onChange={e => setNewAuthor({...newAuthor, bio: e.target.value})} />
               
               <div className="flex gap-2 pt-4">
-                <button onClick={handleQuickAddAuthor} className="flex-1 bg-teal-600 text-white py-3 text-[10px] font-bold uppercase tracking-widest rounded-sm">
+                <button onClick={handleQuickAddAuthor} className="flex-1 bg-teal-600 text-white py-3 text-[10px] font-bold uppercase tracking-widest rounded-sm shadow-sm active:opacity-80">
                   {saveLoading ? "Wait..." : "Save"}
                 </button>
                 <button onClick={() => setShowAuthorModal(false)} className="flex-1 border border-stone-200 py-3 text-[10px] font-bold uppercase text-stone-400 rounded-sm">Close</button>
