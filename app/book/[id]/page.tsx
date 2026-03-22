@@ -44,11 +44,11 @@ export default function BookDetail() {
 
       setBook(currentBook);
 
-      // ✅ Related logic from FIRST CODE (category based)
+      // ✅ Related logic (category based)
       const { data: related } = await supabase
         .from("books")
         .select("*")
-        .eq("category", currentBook.category) // 👈 FROM FIRST CODE
+        .eq("category", currentBook.category)
         .neq("id", id)
         .limit(4);
 
@@ -60,7 +60,7 @@ export default function BookDetail() {
     fetchFullData();
   }, [id]);
 
-  // ✅ Loading
+  // ✅ Loading State
   if (loading)
     return (
       <div className="p-20 text-center font-serif animate-pulse text-stone-400">
@@ -68,7 +68,7 @@ export default function BookDetail() {
       </div>
     );
 
-  // ✅ Not found
+  // ✅ Not found State
   if (!book)
     return (
       <div className="p-20 text-center font-serif">
@@ -131,9 +131,18 @@ export default function BookDetail() {
             {book?.title}
           </h1>
 
-          <p className="text-2xl italic text-stone-500 mt-4">
-            by {book?.author || "Unknown Author"}
-          </p>
+          {/* UPDATED AUTHOR SECTION WITH LINK */}
+          <div className="mt-4">
+            <p className="text-lg text-stone-600 font-serif italic">
+              By{" "}
+              <Link 
+                href={`/author/${encodeURIComponent(book?.author || "Unknown")}`}
+                className="hover:text-teal-600 transition-colors underline underline-offset-4 decoration-stone-300"
+              >
+                {book?.author || "Unknown Author"}
+              </Link>
+            </p>
+          </div>
 
           <p className="text-[10px] font-bold uppercase text-stone-400 mt-2">
             Published by: {book?.publication || "Karuna Publications"}
@@ -166,7 +175,7 @@ export default function BookDetail() {
 
             <button
               onClick={() => addToCart({ ...book, price: finalPrice })}
-              className="flex-1 bg-stone-900 text-white py-5 text-xs font-bold uppercase hover:bg-teal-900"
+              className="flex-1 bg-stone-900 text-white py-5 text-xs font-bold uppercase hover:bg-teal-900 transition-colors"
             >
               Add to Collection
             </button>
@@ -190,7 +199,7 @@ export default function BookDetail() {
       )}
 
       {/* MOBILE BAR */}
-      <div className="fixed bottom-0 left-0 right-0 bg-white border-t p-4 md:hidden flex justify-between">
+      <div className="fixed bottom-0 left-0 right-0 bg-white border-t p-4 md:hidden flex justify-between items-center z-50">
         <div>
           <span className="text-[10px] text-stone-400">Total</span>
           <div className="text-xl font-black">
@@ -200,7 +209,7 @@ export default function BookDetail() {
 
         <button
           onClick={() => addToCart({ ...book, price: finalPrice })}
-          className="bg-stone-900 text-white px-6 py-3 text-[10px] font-bold"
+          className="bg-stone-900 text-white px-6 py-3 text-[10px] font-bold uppercase"
         >
           Add to Cart
         </button>
