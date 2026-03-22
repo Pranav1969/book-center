@@ -72,8 +72,6 @@ export default function AdminDashboard() {
     
     setLoading(true);
 
-    // FIX: Remove nested 'authors' object and metadata before sending to Supabase
-    // This prevents the "Could not find authors column" error
     const { authors: nestedAuthors, id, created_at, ...cleanFormData } = form as any;
 
     const payload = { 
@@ -95,6 +93,19 @@ export default function AdminDashboard() {
       alert(error.message);
     }
     setLoading(false);
+  }
+
+  // --- NEW DELETE FUNCTIONALITY ---
+  async function handleDelete(id: string) {
+    if (!confirm("Are you sure you want to delete this book? This action cannot be undone.")) return;
+    
+    const { error } = await supabase.from("books").delete().eq("id", id);
+    if (!error) {
+      fetchData();
+      alert("Book removed from inventory.");
+    } else {
+      alert(error.message);
+    }
   }
 
   return (
@@ -202,7 +213,18 @@ export default function AdminDashboard() {
                     <p className="text-[10px] text-teal-600 font-bold uppercase tracking-tighter">{book.authors?.name || "Unknown Author"}</p>
                     <p className="font-bold text-stone-900 mt-1">₹{book.price}</p>
                   </div>
-                  <button className="text-stone-400 text-[10px] font-black uppercase hover:text-teal-600 transition-colors" onClick={() => { setForm(book); setEditingId(book.id); window.scrollTo({ top: 0, behavior: 'smooth' }); }}>Edit</button>
+                  <div className="flex items-center">
+                    <button className="text-stone-400 text-[10px] font-black uppercase hover:text-teal-600 transition-colors" onClick={() => { setForm(book); setEditingId(book.id); window.scrollTo({ top: 0, behavior: 'smooth' }); }}>
+                      Edit
+                    </button>
+                    {/* DELETE BUTTON ADDED HERE */}
+                    <button 
+                      className="text-red-400 text-[10px] font-black uppercase hover:text-red-600 ml-4 transition-colors" 
+                      onClick={() => handleDelete(book.id)}
+                    >
+                      Delete
+                    </button>
+                  </div>
                 </div>
               ))}
             </div>
@@ -215,11 +237,11 @@ export default function AdminDashboard() {
         <div className="fixed inset-0 bg-stone-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
           <div className="bg-white p-8 max-w-md w-full shadow-2xl border border-stone-200 rounded-sm">
             <div className="flex justify-between items-start mb-6 border-b pb-4">
-               <div>
+                <div>
                   <h2 className="font-serif text-2xl italic">{editingAuthorId ? "Update Author" : "New Author"}</h2>
                   <p className="text-[9px] font-bold uppercase text-stone-400 tracking-widest">Contributor Archive</p>
-               </div>
-               <button onClick={() => setShowAuthorModal(false)} className="text-2xl text-stone-300 hover:text-stone-900 transition-colors">×</button>
+                </div>
+                <button onClick={() => setShowAuthorModal(false)} className="text-2xl text-stone-300 hover:text-stone-900 transition-colors">×</button>
             </div>
             
             <div className="space-y-5">
