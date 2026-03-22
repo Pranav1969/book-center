@@ -2,6 +2,7 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/app/lib/supabase";
 import ImageCapture from "@/components/ImageCapture";
+import Link from "next/link"; // ✅ Added for navigation
 
 export default function InventoryPage() {
   const [books, setBooks] = useState<any[]>([]);
@@ -20,7 +21,7 @@ export default function InventoryPage() {
     collection_name: "General", 
     discount_percent: 0, 
     is_featured: false,
-    is_bestseller: false // ✅ ADDED
+    is_bestseller: false 
   });
 
   useEffect(() => { fetchBooks(); }, []);
@@ -65,7 +66,7 @@ export default function InventoryPage() {
         collection_name: "General", 
         discount_percent: 0, 
         is_featured: false,
-        is_bestseller: false // ✅ RESET
+        is_bestseller: false 
       });
       setEditingId(null);
       fetchBooks();
@@ -77,13 +78,32 @@ export default function InventoryPage() {
   return (
     <div className="p-8 bg-stone-50 min-h-screen">
       <div className="max-w-7xl mx-auto">
-        <div className="flex justify-between items-center mb-12">
-          <h1 className="text-4xl font-serif font-bold italic text-stone-900">
-            Inventory Manager
-          </h1>
-          <p className="text-[10px] font-bold uppercase tracking-[0.3em] text-stone-400">
-            Karuna Book Center Admin
-          </p>
+        
+        {/* ✅ ADDED NAVIGATION HEADER */}
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 pb-6 border-b border-stone-200 gap-4">
+          <div>
+            <h1 className="text-4xl font-serif font-bold italic text-stone-900">
+              Admin Dashboard
+            </h1>
+            <p className="text-[10px] font-bold uppercase tracking-[0.3em] text-stone-400">
+              Karuna Book Center Management
+            </p>
+          </div>
+          
+          <div className="flex gap-4">
+            <Link 
+              href="/admin" 
+              className="px-6 py-2 bg-stone-900 text-white text-[10px] font-bold uppercase tracking-widest rounded-full shadow-sm"
+            >
+              Inventory Manager
+            </Link>
+            <Link 
+              href="/admin/banners" 
+              className="px-6 py-2 bg-white border border-stone-200 text-stone-600 text-[10px] font-bold uppercase tracking-widest rounded-full hover:bg-stone-100 transition-colors shadow-sm"
+            >
+              Hero Banners
+            </Link>
+          </div>
         </div>
 
         <div className="grid lg:grid-cols-12 gap-12">
@@ -170,7 +190,7 @@ export default function InventoryPage() {
                 className="border-b py-2 w-full"
               />
 
-              {/* ✅ BESTSELLER + FEATURED CHECKBOX */}
+              {/* BESTSELLER + FEATURED CHECKBOX */}
               <div className="flex gap-6 pt-2">
                 <label className="flex items-center gap-2 cursor-pointer group">
                   <input 
@@ -204,29 +224,37 @@ export default function InventoryPage() {
           </div>
 
           {/* LIST */}
-          <div className="lg:col-span-7 grid gap-4">
+          <div className="lg:col-span-7 grid gap-4 h-fit">
+            <h3 className="text-[10px] font-black uppercase tracking-widest text-stone-400 mb-2">
+              Recent Inventory
+            </h3>
             {books.map(book => (
-              <div key={book.id} className="bg-white p-4 flex gap-4">
+              <div key={book.id} className="bg-white p-4 flex gap-4 border border-stone-200 shadow-sm">
                 <img src={book.image_url} className="w-16 h-24 object-cover" />
                 
                 <div className="flex-1">
-                  <h4 className="font-bold">{book.title}</h4>
-                  <p className="text-xs">{book.author}</p>
+                  <h4 className="font-bold text-stone-800">{book.title}</h4>
+                  <p className="text-xs text-stone-500">{book.author}</p>
 
-                  <p className="text-[10px] text-gray-400 uppercase">
+                  <p className="text-[10px] text-gray-400 uppercase mt-1">
                     {book.category || "No Category"}
                   </p>
 
-                  <p>₹{book.price}</p>
+                  <p className="font-bold text-stone-900 mt-2">₹{book.price}</p>
                 </div>
 
-                <button onClick={() => {
-                  setForm(book);
-                  setEditingId(book.id);
-                  window.scrollTo({ top: 0, behavior: 'smooth' });
-                }}>
-                  Edit
-                </button>
+                <div className="flex flex-col justify-center">
+                  <button 
+                    className="text-teal-600 text-[10px] font-black uppercase tracking-widest hover:underline"
+                    onClick={() => {
+                      setForm(book);
+                      setEditingId(book.id);
+                      window.scrollTo({ top: 0, behavior: 'smooth' });
+                    }}
+                  >
+                    Edit
+                  </button>
+                </div>
               </div>
             ))}
           </div>
