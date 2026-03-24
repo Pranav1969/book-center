@@ -9,6 +9,7 @@ export default function Home() {
   const [allBooks, setAllBooks] = useState<any[]>([]);
   const [filteredBooks, setFilteredBooks] = useState<any[]>([]);
   const [banners, setBanners] = useState<any[]>([]);
+  const [campaign, setCampaign] = useState<any>(null); // ✅ New state for campaigns
   const [currentSlide, setCurrentSlide] = useState(0);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
@@ -18,19 +19,33 @@ export default function Home() {
     async function fetchData() {
       setLoading(true);
       
+      // 1. Fetch Books
       const { data: booksData } = await supabase
         .from("books")
         .select("*")
         .order("created_at", { ascending: false });
 
+      // 2. Fetch Banners
       const { data: bannerData } = await supabase
         .from("banners")
         .select("*")
         .order("priority", { ascending: true });
 
+      // 3. Fetch Active Campaign (New Functionality)
+      const { data: campaignData } = await supabase
+        .from("campaigns")
+        .select("*")
+        .eq("is_active", true)
+        .limit(1);
+
       setAllBooks(booksData || []);
       setFilteredBooks(booksData || []);
       setBanners(bannerData || []);
+      
+      if (campaignData && campaignData.length > 0) {
+        setCampaign(campaignData[0]);
+      }
+
       setLoading(false);
     }
     fetchData();
@@ -47,16 +62,14 @@ export default function Home() {
   // ✅ DYNAMIC CATEGORIES LIST
   const categories = ["All", ...new Set(allBooks.map((b) => b.category).filter(Boolean))] as string[];
 
-  // ✅ COMBINED FILTER LOGIC (Maintains the priority sorting from old code)
+  // ✅ COMBINED FILTER LOGIC
   const applyFilters = useCallback((query: string, category: string) => {
     let baseResults = [...allBooks];
 
-    // Filter by Category first
     if (category !== "All") {
       baseResults = baseResults.filter(book => book.category === category);
     }
 
-    // Then apply Search logic with priority
     if (!query.trim()) {
       setFilteredBooks(baseResults);
       return;
@@ -111,8 +124,6 @@ export default function Home() {
       
       {/* 🎭 DYNAMIC ANIMATED HERO SECTION */}
       <section className="relative h-[60vh] md:h-[85vh] w-full overflow-hidden bg-stone-900">
-        
-        {/* Background Image Carousel */}
         <AnimatePresence mode="wait">
           <motion.div
             key={currentSlide}
@@ -136,7 +147,6 @@ export default function Home() {
           </motion.div>
         </AnimatePresence>
 
-        {/* Floating Content Overlay */}
         <div className="relative z-20 flex flex-col items-center justify-center h-full px-6 text-center">
           <motion.div
             initial={{ y: 30, opacity: 0 }}
@@ -160,7 +170,6 @@ export default function Home() {
               </motion.p>
             </AnimatePresence>
             
-            {/* Search Bar */}
             <div className="max-w-2xl mx-auto relative group">
               <input 
                 type="text" 
@@ -175,7 +184,6 @@ export default function Home() {
             </div>
           </motion.div>
 
-          {/* Slide Indicators */}
           {banners.length > 1 && (
             <div className="absolute bottom-6 md:bottom-10 flex gap-2 md:gap-3">
               {banners.map((_, idx) => (
@@ -190,7 +198,42 @@ export default function Home() {
         </div>
       </section>
 
-      {/* ✅ CATEGORY FILTER BAR (New Integration) */}
+      {/* 🎊 NEW: CAMPAIGN SECTION (Visible on 'All' and empty search) */}
+      {campaign && !searchQuery && selectedCategory === "All" && (
+        <section className="bg-white py-12 border-b border-stone-100">
+          <div className="max-w-7xl mx-auto px-6">
+            <div className="group relative bg-teal-50 rounded-2xl overflow-hidden flex flex-col md:flex-row items-center border border-teal-100 shadow-sm transition-all hover:shadow-md">
+              <div className="p-8 md:p-16 md:w-1/2 space-y-6">
+                <div className="flex items-center gap-2">
+                  <span className="w-2 h-2 rounded-full bg-teal-500 animate-pulse" />
+                  <span className="text-[10px] font-black uppercase tracking-[0.2em] text-teal-600">Special Event</span>
+                </div>
+                <h2 className="font-serif text-3xl md:text-5xl text-stone-800 italic leading-tight">
+                  {campaign.title}
+                </h2>
+                <p className="text-stone-500 font-serif text-lg leading-relaxed max-w-md">
+                  {campaign.description}
+                </p>
+                <button 
+                  onClick={() => window.location.href = campaign.target_url || "#"}
+                  className="inline-block bg-stone-900 text-white px-10 py-4 rounded-full text-[10px] font-bold uppercase tracking-widest hover:bg-teal-700 transition-all transform hover:-translate-y-1 shadow-lg"
+                >
+                  {campaign.button_text || "Explore Collection"}
+                </button>
+              </div>
+              <div className="md:w-1/2 w-full h-64 md:h-[480px] relative overflow-hidden">
+                <img 
+                  src={campaign.image_url} 
+                  alt={campaign.title} 
+                  className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+                />
+              </div>
+            </div>
+          </div>
+        </section>
+      )}
+
+      {/* ✅ CATEGORY FILTER BAR */}
       <nav className="sticky top-0 z-40 bg-white border-b border-stone-100 shadow-sm overflow-x-auto no-scrollbar">
         <div className="max-w-7xl mx-auto px-6 py-4 flex items-center gap-4 whitespace-nowrap">
           <span className="text-[10px] font-black uppercase tracking-widest text-stone-400 border-r pr-4 border-stone-200">
@@ -212,7 +255,7 @@ export default function Home() {
         </div>
       </nav>
 
-      {/* ✅ BEST SELLERS SECTION (Only visible on "All" and no search) */}
+      {/* ✅ BEST SELLERS SECTION */}
       {selectedCategory === "All" && bestSellers.length > 0 && !searchQuery && (
         <section className="bg-white py-10 md:py-20 border-b border-stone-100">
           <div className="max-w-7xl mx-auto px-6">

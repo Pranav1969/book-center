@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Karuna-books</string>
+    <string name="title_activity_main">Karuna-books</string>
+    <string name="package_name">com.karunabooks.app</string>
+    <string name="custom_url_scheme">com.karunabooks.app</string>
+</resources>

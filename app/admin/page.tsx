@@ -128,6 +128,7 @@ export default function AdminDashboard() {
             <Link href="/admin/stock" className="px-5 py-2 bg-white border border-teal-600 text-teal-600 text-[10px] font-bold uppercase rounded-full shrink-0">Stock</Link>
             <Link href="/admin/banners" className="px-5 py-2 bg-white border text-[10px] font-bold uppercase rounded-full shrink-0">Banners</Link>
             <Link href="/admin/authors" className="px-5 py-2 bg-white border text-[10px] font-bold uppercase rounded-full shrink-0">Authors</Link>
+            <Link href="/admin/campaigns" className="px-5 py-2 bg-white border border-teal-600 text-teal-600 text-[10px] font-bold uppercase rounded-full shrink-0">Campaigns</Link>
           </nav>
         </header>
 
