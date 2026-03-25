@@ -4,12 +4,13 @@ import { useEffect, useState, useCallback } from "react";
 import { supabase } from "@/app/lib/supabase";
 import BookCard from "@/components/BookCard";
 import { motion, AnimatePresence } from "framer-motion";
+import Link from "next/link"; // ✅ Added for the Campaign Button
 
 export default function Home() {
   const [allBooks, setAllBooks] = useState<any[]>([]);
   const [filteredBooks, setFilteredBooks] = useState<any[]>([]);
   const [banners, setBanners] = useState<any[]>([]);
-  const [campaign, setCampaign] = useState<any>(null); // ✅ New state for campaigns
+  const [campaign, setCampaign] = useState<any>(null); // ✅ NEW STATE
   const [currentSlide, setCurrentSlide] = useState(0);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
@@ -18,7 +19,7 @@ export default function Home() {
   useEffect(() => {
     async function fetchData() {
       setLoading(true);
-      
+
       // 1. Fetch Books
       const { data: booksData } = await supabase
         .from("books")
@@ -31,20 +32,18 @@ export default function Home() {
         .select("*")
         .order("priority", { ascending: true });
 
-      // 3. Fetch Active Campaign (New Functionality)
+      // 3. Fetch Active Campaign ✅ NEW FETCH LOGIC
       const { data: campaignData } = await supabase
         .from("campaigns")
         .select("*")
         .eq("is_active", true)
-        .limit(1);
+        .limit(1)
+        .single();
 
       setAllBooks(booksData || []);
       setFilteredBooks(booksData || []);
       setBanners(bannerData || []);
-      
-      if (campaignData && campaignData.length > 0) {
-        setCampaign(campaignData[0]);
-      }
+      setCampaign(campaignData || null); // ✅ SET CAMPAIGN STATE
 
       setLoading(false);
     }
@@ -59,10 +58,17 @@ export default function Home() {
     return () => clearInterval(timer);
   }, [banners]);
 
-  // ✅ DYNAMIC CATEGORIES LIST
+  // RESET ALL FILTERS
+  const resetAll = () => {
+    setSearchQuery("");
+    setSelectedCategory("All");
+    setFilteredBooks(allBooks);
+  };
+
+  // DYNAMIC CATEGORIES LIST
   const categories = ["All", ...new Set(allBooks.map((b) => b.category).filter(Boolean))] as string[];
 
-  // ✅ COMBINED FILTER LOGIC
+  // COMBINED FILTER LOGIC
   const applyFilters = useCallback((query: string, category: string) => {
     let baseResults = [...allBooks];
 
@@ -83,7 +89,6 @@ export default function Home() {
         else if (book.author?.toLowerCase().includes(q)) priority = 3;
         else if (book.publication?.toLowerCase().includes(q)) priority = 2;
         else if (book.description?.toLowerCase().includes(q)) priority = 1;
-        
         return { ...book, priority };
       })
       .filter(book => book.priority > 0)
@@ -122,7 +127,7 @@ export default function Home() {
   return (
     <main className="min-h-screen bg-[#fdfcfb]">
       
-      {/* 🎭 DYNAMIC ANIMATED HERO SECTION */}
+      {/* 🎭 HERO SECTION */}
       <section className="relative h-[60vh] md:h-[85vh] w-full overflow-hidden bg-stone-900">
         <AnimatePresence mode="wait">
           <motion.div
@@ -198,7 +203,7 @@ export default function Home() {
         </div>
       </section>
 
-      {/* 🎊 NEW: CAMPAIGN SECTION (Visible on 'All' and empty search) */}
+      {/* 🎊 NEW: DYNAMIC CAMPAIGN SECTION */}
       {campaign && !searchQuery && selectedCategory === "All" && (
         <section className="bg-white py-12 border-b border-stone-100">
           <div className="max-w-7xl mx-auto px-6">
@@ -214,12 +219,12 @@ export default function Home() {
                 <p className="text-stone-500 font-serif text-lg leading-relaxed max-w-md">
                   {campaign.description}
                 </p>
-                <button 
-                  onClick={() => window.location.href = campaign.target_url || "#"}
+                <Link 
+                  href={campaign.target_url || "#"} 
                   className="inline-block bg-stone-900 text-white px-10 py-4 rounded-full text-[10px] font-bold uppercase tracking-widest hover:bg-teal-700 transition-all transform hover:-translate-y-1 shadow-lg"
                 >
-                  {campaign.button_text || "Explore Collection"}
-                </button>
+                  {campaign.button_text || "Explore Now"}
+                </Link>
               </div>
               <div className="md:w-1/2 w-full h-64 md:h-[480px] relative overflow-hidden">
                 <img 
@@ -282,14 +287,14 @@ export default function Home() {
       )}
 
       {/* BOOKS GRID */}
-      <div className="max-w-7xl mx-auto px-6 py-10 md:py-16 space-y-12 md:space-y-24">
+      <div id="books-grid" className="max-w-7xl mx-auto px-6 py-10 md:py-16 space-y-12 md:space-y-24">
         {filteredBooks.length === 0 ? (
           <div className="py-20 md:py-32 text-center">
             <p className="text-stone-400 font-serif italic text-xl md:text-2xl">
               "No treasures found in this selection..."
             </p>
             <button 
-              onClick={() => {setSearchQuery(""); setSelectedCategory("All"); setFilteredBooks(allBooks);}} 
+              onClick={resetAll} 
               className="mt-4 text-teal-600 text-[9px] font-black uppercase tracking-widest hover:tracking-[0.2em] transition-all underline underline-offset-8"
             >
               Reset Filters
