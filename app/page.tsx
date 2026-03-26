@@ -3,36 +3,44 @@
 import { useEffect, useState, useCallback } from "react";
 import { supabase } from "@/app/lib/supabase";
 import BookCard from "@/components/BookCard";
-import { motion, AnimatePresence } from "framer-motion";
-import Link from "next/link"; // ✅ Added for the Campaign Button
+import { motion, AnimatePresence, useScroll, useSpring } from "framer-motion";
+import Link from "next/link";
+
+// Animation Variants
+const fadeInUp = {
+  initial: { opacity: 0, y: 20 },
+  animate: { opacity: 1, y: 0 },
+  transition: { duration: 0.6, ease: "easeOut" }
+};
+
+const staggerContainer = {
+  animate: { transition: { staggerChildren: 0.1 } }
+};
 
 export default function Home() {
   const [allBooks, setAllBooks] = useState<any[]>([]);
   const [filteredBooks, setFilteredBooks] = useState<any[]>([]);
   const [banners, setBanners] = useState<any[]>([]);
-  const [campaign, setCampaign] = useState<any>(null); // ✅ NEW STATE
+  const [campaign, setCampaign] = useState<any>(null);
   const [currentSlide, setCurrentSlide] = useState(0);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("All");
 
+  // Fetch Data logic remains unchanged to preserve core functionality
   useEffect(() => {
     async function fetchData() {
       setLoading(true);
-
-      // 1. Fetch Books
       const { data: booksData } = await supabase
         .from("books")
         .select("*")
         .order("created_at", { ascending: false });
 
-      // 2. Fetch Banners
       const { data: bannerData } = await supabase
         .from("banners")
         .select("*")
         .order("priority", { ascending: true });
 
-      // 3. Fetch Active Campaign ✅ NEW FETCH LOGIC
       const { data: campaignData } = await supabase
         .from("campaigns")
         .select("*")
@@ -43,8 +51,7 @@ export default function Home() {
       setAllBooks(booksData || []);
       setFilteredBooks(booksData || []);
       setBanners(bannerData || []);
-      setCampaign(campaignData || null); // ✅ SET CAMPAIGN STATE
-
+      setCampaign(campaignData || null);
       setLoading(false);
     }
     fetchData();
@@ -54,27 +61,21 @@ export default function Home() {
     if (banners.length <= 1) return;
     const timer = setInterval(() => {
       setCurrentSlide((prev) => (prev + 1) % banners.length);
-    }, 5000);
+    }, 6000);
     return () => clearInterval(timer);
   }, [banners]);
 
-  // RESET ALL FILTERS
   const resetAll = () => {
     setSearchQuery("");
     setSelectedCategory("All");
     setFilteredBooks(allBooks);
   };
 
-  // DYNAMIC CATEGORIES LIST
   const categories = ["All", ...new Set(allBooks.map((b) => b.category).filter(Boolean))] as string[];
 
-  // COMBINED FILTER LOGIC
   const applyFilters = useCallback((query: string, category: string) => {
     let baseResults = [...allBooks];
-
-    if (category !== "All") {
-      baseResults = baseResults.filter(book => book.category === category);
-    }
+    if (category !== "All") baseResults = baseResults.filter(book => book.category === category);
 
     if (!query.trim()) {
       setFilteredBooks(baseResults);
@@ -88,7 +89,6 @@ export default function Home() {
         if (book.title?.toLowerCase().includes(q)) priority = 4;
         else if (book.author?.toLowerCase().includes(q)) priority = 3;
         else if (book.publication?.toLowerCase().includes(q)) priority = 2;
-        else if (book.description?.toLowerCase().includes(q)) priority = 1;
         return { ...book, priority };
       })
       .filter(book => book.priority > 0)
@@ -103,226 +103,244 @@ export default function Home() {
     applyFilters(val, selectedCategory);
   };
 
-  const handleCategoryClick = (cat: string) => {
-    setSelectedCategory(cat);
-    applyFilters(searchQuery, cat);
-  };
-
   if (loading) return (
-    <div className="flex h-screen items-center justify-center bg-[#fdfcfb] font-serif italic text-stone-400">
-      <motion.p 
-        initial={{ opacity: 0 }} 
-        animate={{ opacity: 1 }} 
-        transition={{ repeat: Infinity, duration: 1, repeatType: "reverse" }}
-      >
-        Loading Library...
-      </motion.p>
+    <div className="flex h-screen items-center justify-center bg-[#f8f7f4]">
+      <div className="relative">
+        <div className="w-16 h-16 border-4 border-stone-200 border-t-teal-600 rounded-full animate-spin"></div>
+        <p className="mt-4 font-serif italic text-stone-500 animate-pulse">Curating your library...</p>
+      </div>
     </div>
   );
 
   const bestSellers = allBooks.filter(b => b.is_bestseller);
-  const collections = [...new Set(filteredBooks.map((b) => b.collection_name))]
-    .filter(Boolean) as string[];
+  const collections = [...new Set(filteredBooks.map((b) => b.collection_name))].filter(Boolean) as string[];
 
   return (
-    <main className="min-h-screen bg-[#fdfcfb]">
+    <main className="min-h-screen bg-[#fcfbf9] text-stone-900 selection:bg-teal-100 selection:text-teal-900">
       
-      {/* 🎭 HERO SECTION */}
-      <section className="relative h-[60vh] md:h-[85vh] w-full overflow-hidden bg-stone-900">
+      {/* 🎭 MODERN HERO SECTION */}
+      <section className="relative h-[75vh] md:h-[90vh] w-full overflow-hidden">
         <AnimatePresence mode="wait">
           <motion.div
             key={currentSlide}
-            initial={{ opacity: 0, scale: 1.1 }}
+            initial={{ opacity: 0, scale: 1.05 }}
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0 }}
-            transition={{ duration: 1.5, ease: "easeOut" }}
-            className="absolute inset-0 w-full h-full"
+            transition={{ duration: 1.2 }}
+            className="absolute inset-0"
           >
             {banners.length > 0 ? (
               <img 
                 src={banners[currentSlide].image_url} 
-                alt="Promotion Banner"
+                alt="Banner"
                 className="w-full h-full object-cover"
-                loading="eager"
               />
             ) : (
-              <div className="w-full h-full bg-stone-800" />
+              <div className="w-full h-full bg-stone-900" />
             )}
-            <div className="absolute inset-0 bg-black/50 backdrop-blur-[1px]" />
+            {/* Premium Gradient Overlay */}
+            <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-black/20 to-[#fcfbf9]" />
           </motion.div>
         </AnimatePresence>
 
-        <div className="relative z-20 flex flex-col items-center justify-center h-full px-6 text-center">
+        <div className="relative z-20 flex flex-col items-center justify-center h-full px-6">
           <motion.div
-            initial={{ y: 30, opacity: 0 }}
+            initial={{ y: 40, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
-            transition={{ delay: 0.5, duration: 0.8 }}
-            className="w-full max-w-4xl"
+            transition={{ delay: 0.2, duration: 0.8 }}
+            className="w-full max-w-5xl text-center"
           >
-            <h1 className="font-serif text-4xl md:text-8xl text-white mb-3 md:mb-6 italic drop-shadow-2xl">
-              Karuna Book Center
+            <span className="inline-block px-4 py-1.5 mb-6 text-[10px] font-bold tracking-[0.3em] uppercase bg-white/10 backdrop-blur-md border border-white/20 text-teal-400 rounded-full">
+              EST. 2024 • Premier Literary Hub
+            </span>
+            <h1 className="font-serif text-5xl md:text-9xl text-white mb-8 italic leading-tight drop-shadow-sm">
+              Karuna <span className="text-teal-400">Book</span> Center
             </h1>
             
-            <AnimatePresence mode="wait">
-              <motion.p 
-                key={currentSlide}
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -10 }}
-                className="text-teal-400 uppercase tracking-[0.3em] md:tracking-[0.4em] text-[9px] md:text-xs font-bold mb-6 md:mb-10 drop-shadow-md"
-              >
-                {banners[currentSlide]?.title || "Explore Our Exclusive Collection"}
-              </motion.p>
-            </AnimatePresence>
-            
             <div className="max-w-2xl mx-auto relative group">
+              <div className="absolute -inset-1 bg-gradient-to-r from-teal-500 to-emerald-500 rounded-full blur opacity-25 group-focus-within:opacity-50 transition duration-1000"></div>
               <input 
                 type="text" 
                 value={searchQuery}
                 onChange={onSearchChange}
-                placeholder="Search by Title or Author..." 
-                className="w-full bg-white/10 backdrop-blur-lg border border-white/20 py-4 md:py-5 px-8 md:px-10 rounded-full text-sm text-white focus:bg-white focus:text-stone-900 focus:ring-4 ring-teal-500/50 outline-none transition-all duration-300 shadow-2xl"
+                placeholder="Search titles, authors, or genres..." 
+                className="relative w-full bg-white/90 backdrop-blur-xl border-none py-5 md:py-6 px-10 rounded-full text-stone-800 shadow-2xl focus:ring-2 ring-teal-500 outline-none transition-all placeholder:text-stone-400"
               />
-              <div className="absolute right-5 md:right-6 top-1/2 -translate-y-1/2">
-                <span className="text-teal-400 text-xl md:text-2xl group-hover:scale-110 transition-transform inline-block">🔍</span>
-              </div>
+              <button className="absolute right-4 top-1/2 -translate-y-1/2 w-12 h-12 flex items-center justify-center bg-stone-900 text-white rounded-full hover:bg-teal-600 transition-colors">
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                </svg>
+              </button>
             </div>
           </motion.div>
 
-          {banners.length > 1 && (
-            <div className="absolute bottom-6 md:bottom-10 flex gap-2 md:gap-3">
-              {banners.map((_, idx) => (
-                <button 
-                  key={idx}
-                  onClick={() => setCurrentSlide(idx)}
-                  className={`h-1 md:h-1.5 rounded-full transition-all duration-500 ${idx === currentSlide ? 'w-8 md:w-10 bg-teal-500' : 'w-2 md:w-3 bg-white/30'}`}
-                />
-              ))}
-            </div>
-          )}
+          {/* Slide Indicators */}
+          <div className="absolute bottom-12 flex gap-3">
+            {banners.map((_, idx) => (
+              <button 
+                key={idx}
+                onClick={() => setCurrentSlide(idx)}
+                className={`h-1 transition-all duration-500 rounded-full ${idx === currentSlide ? 'w-12 bg-teal-500' : 'w-4 bg-white/40 hover:bg-white/60'}`}
+              />
+            ))}
+          </div>
         </div>
       </section>
 
-      {/* 🎊 NEW: DYNAMIC CAMPAIGN SECTION */}
+      {/* 🎊 REFINED CAMPAIGN SECTION */}
       {campaign && !searchQuery && selectedCategory === "All" && (
-        <section className="bg-white py-12 border-b border-stone-100">
-          <div className="max-w-7xl mx-auto px-6">
-            <div className="group relative bg-teal-50 rounded-2xl overflow-hidden flex flex-col md:flex-row items-center border border-teal-100 shadow-sm transition-all hover:shadow-md">
-              <div className="p-8 md:p-16 md:w-1/2 space-y-6">
-                <div className="flex items-center gap-2">
-                  <span className="w-2 h-2 rounded-full bg-teal-500 animate-pulse" />
-                  <span className="text-[10px] font-black uppercase tracking-[0.2em] text-teal-600">Special Event</span>
-                </div>
-                <h2 className="font-serif text-3xl md:text-5xl text-stone-800 italic leading-tight">
-                  {campaign.title}
-                </h2>
-                <p className="text-stone-500 font-serif text-lg leading-relaxed max-w-md">
-                  {campaign.description}
-                </p>
-                <Link 
-                  href={campaign.target_url || "#"} 
-                  className="inline-block bg-stone-900 text-white px-10 py-4 rounded-full text-[10px] font-bold uppercase tracking-widest hover:bg-teal-700 transition-all transform hover:-translate-y-1 shadow-lg"
-                >
-                  {campaign.button_text || "Explore Now"}
-                </Link>
+        <motion.section 
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          className="max-w-7xl mx-auto px-6 -mt-20 relative z-30"
+        >
+          <div className="group relative bg-white rounded-3xl overflow-hidden flex flex-col md:flex-row items-center shadow-[0_20px_50px_rgba(0,0,0,0.1)] border border-stone-100">
+            <div className="p-10 md:p-20 md:w-1/2 space-y-6">
+              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-md bg-teal-50">
+                <span className="w-2 h-2 rounded-full bg-teal-500 animate-pulse" />
+                <span className="text-[10px] font-black uppercase tracking-widest text-teal-700">Limited Collection</span>
               </div>
-              <div className="md:w-1/2 w-full h-64 md:h-[480px] relative overflow-hidden">
-                <img 
-                  src={campaign.image_url} 
-                  alt={campaign.title} 
-                  className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
-                />
-              </div>
+              <h2 className="font-serif text-4xl md:text-6xl text-stone-800 italic leading-tight">
+                {campaign.title}
+              </h2>
+              <p className="text-stone-500 font-serif text-lg leading-relaxed">
+                {campaign.description}
+              </p>
+              <Link 
+                href={campaign.target_url || "#"} 
+                className="group inline-flex items-center gap-3 bg-stone-900 text-white px-8 py-4 rounded-full text-xs font-bold uppercase tracking-widest hover:bg-teal-600 transition-all transform hover:scale-105"
+              >
+                {campaign.button_text || "Explore Now"}
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 transition-transform group-hover:translate-x-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 5l7 7m0 0l-7 7m7-7H3" />
+                </svg>
+              </Link>
+            </div>
+            <div className="md:w-1/2 w-full h-80 md:h-[550px] overflow-hidden">
+              <img src={campaign.image_url} className="w-full h-full object-cover transition-transform duration-1000 group-hover:scale-110" alt="Campaign" />
             </div>
           </div>
-        </section>
+        </motion.section>
       )}
 
-      {/* ✅ CATEGORY FILTER BAR */}
-      <nav className="sticky top-0 z-40 bg-white border-b border-stone-100 shadow-sm overflow-x-auto no-scrollbar">
-        <div className="max-w-7xl mx-auto px-6 py-4 flex items-center gap-4 whitespace-nowrap">
-          <span className="text-[10px] font-black uppercase tracking-widest text-stone-400 border-r pr-4 border-stone-200">
-            Categories
-          </span>
-          {categories.map((cat) => (
-            <button
-              key={cat}
-              onClick={() => handleCategoryClick(cat)}
-              className={`px-4 py-1.5 rounded-full text-[10px] font-bold uppercase tracking-widest transition-all ${
-                selectedCategory === cat 
-                ? 'bg-teal-600 text-white shadow-md' 
-                : 'bg-stone-100 text-stone-500 hover:bg-stone-200'
-              }`}
-            >
-              {cat}
-            </button>
-          ))}
+      {/* ✅ STICKY PREMIUM NAV */}
+      <nav className="sticky top-0 z-50 bg-white/80 backdrop-blur-xl border-b border-stone-100">
+        <div className="max-w-7xl mx-auto px-6 h-20 flex items-center justify-between">
+          <div className="flex items-center gap-8 overflow-x-auto no-scrollbar">
+            <span className="text-[10px] font-black uppercase tracking-tighter text-stone-400 bg-stone-100 px-2 py-1 rounded">
+              Filters
+            </span>
+            <div className="flex gap-2">
+              {categories.map((cat) => (
+                <button
+                  key={cat}
+                  onClick={() => { setSelectedCategory(cat); applyFilters(searchQuery, cat); }}
+                  className={`px-5 py-2 rounded-full text-[11px] font-bold uppercase tracking-widest transition-all whitespace-nowrap ${
+                    selectedCategory === cat 
+                    ? 'bg-stone-900 text-white shadow-lg scale-105' 
+                    : 'text-stone-500 hover:text-stone-900 hover:bg-stone-50'
+                  }`}
+                >
+                  {cat}
+                </button>
+              ))}
+            </div>
+          </div>
         </div>
       </nav>
 
-      {/* ✅ BEST SELLERS SECTION */}
+      {/* ✅ BEST SELLERS: HORIZONTAL ELEGANCE */}
       {selectedCategory === "All" && bestSellers.length > 0 && !searchQuery && (
-        <section className="bg-white py-10 md:py-20 border-b border-stone-100">
+        <section className="py-20 bg-[#f8f7f4]">
           <div className="max-w-7xl mx-auto px-6">
-            <div className="flex items-center gap-4 md:gap-6 mb-8 md:mb-12">
-              <div className="h-[1px] bg-stone-200 flex-1"></div>
-              <h2 className="font-serif text-2xl md:text-4xl italic font-medium text-stone-800 tracking-tight">
-                Best Sellers
-              </h2>
-              <div className="h-[1px] bg-stone-200 flex-1"></div>
+            <div className="flex justify-between items-end mb-12">
+              <div>
+                <h2 className="font-serif text-4xl md:text-5xl italic text-stone-800">The Bestsellers</h2>
+                <p className="text-stone-500 mt-2 font-serif">Handpicked literary masterpieces loved by thousands.</p>
+              </div>
             </div>
-
-            <div className="flex overflow-x-auto pb-4 md:pb-8 gap-4 md:gap-8 no-scrollbar md:grid md:grid-cols-4 lg:grid-cols-5 md:overflow-visible">
+            <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-8">
               {bestSellers.map((book) => (
-                <div key={book.id} className="min-w-[180px] md:min-w-[220px] flex-shrink-0 relative group">
-                  <div className="absolute -top-2 -left-2 z-30 bg-amber-500 text-white text-[8px] font-black px-2 py-1 uppercase tracking-widest shadow-lg transform -rotate-12">
-                    Must Read
+                <motion.div 
+                  key={book.id}
+                  whileHover={{ y: -10 }}
+                  className="relative"
+                >
+                  <div className="absolute -top-3 -right-3 z-30 bg-teal-500 text-white text-[9px] font-bold px-3 py-1 rounded-full shadow-xl">
+                    Top Rated
                   </div>
                   <BookCard book={book} />
-                </div>
+                </motion.div>
               ))}
             </div>
           </div>
         </section>
       )}
 
-      {/* BOOKS GRID */}
-      <div id="books-grid" className="max-w-7xl mx-auto px-6 py-10 md:py-16 space-y-12 md:space-y-24">
+      {/* MAIN CONTENT GRID */}
+      <div className="max-w-7xl mx-auto px-6 py-20">
         {filteredBooks.length === 0 ? (
-          <div className="py-20 md:py-32 text-center">
-            <p className="text-stone-400 font-serif italic text-xl md:text-2xl">
-              "No treasures found in this selection..."
-            </p>
-            <button 
-              onClick={resetAll} 
-              className="mt-4 text-teal-600 text-[9px] font-black uppercase tracking-widest hover:tracking-[0.2em] transition-all underline underline-offset-8"
-            >
-              Reset Filters
+          <div className="py-40 text-center">
+            <h3 className="font-serif italic text-3xl text-stone-400">Our shelves are quiet today...</h3>
+            <button onClick={resetAll} className="mt-6 text-teal-600 font-bold uppercase tracking-widest text-xs border-b-2 border-teal-600 pb-1 hover:text-teal-700 transition-colors">
+              Clear all filters
             </button>
           </div>
         ) : (
-          collections.map((colName) => (
-            <section key={colName} id={colName} className="scroll-mt-20 md:scroll-mt-32">
-              <div className="flex items-baseline justify-between mb-6 md:mb-10 border-b border-stone-100 pb-3 md:pb-4">
-                <h3 className="font-serif text-xl md:text-3xl font-light text-stone-800 italic">
-                  {colName}
-                </h3>
-                <span className="text-[9px] md:text-[10px] text-stone-400 font-bold uppercase tracking-widest">
-                  {filteredBooks.filter(b => b.collection_name === colName).length} Titles
-                </span>
-              </div>
+          <div className="space-y-32">
+            {collections.map((colName) => (
+              <motion.section 
+                key={colName}
+                initial="initial"
+                whileInView="animate"
+                viewport={{ once: true, margin: "-100px" }}
+                variants={staggerContainer}
+                className="scroll-mt-32"
+              >
+                <div className="flex items-center gap-6 mb-12">
+                  <h3 className="font-serif text-3xl md:text-4xl italic font-light text-stone-800 shrink-0">
+                    {colName}
+                  </h3>
+                  <div className="h-[1px] bg-stone-200 w-full" />
+                  <span className="text-[10px] text-stone-400 font-black uppercase tracking-widest shrink-0">
+                    {filteredBooks.filter(b => b.collection_name === colName).length} Works
+                  </span>
+                </div>
 
-              <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-x-4 md:gap-x-8 gap-y-8 md:gap-y-16">
-                {filteredBooks
-                  .filter((b) => b.collection_name === colName)
-                  .map((book) => (
-                    <BookCard key={book.id} book={book} />
-                  ))}
-              </div>
-            </section>
-          ))
+                <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-x-8 gap-y-16">
+                  {filteredBooks
+                    .filter((b) => b.collection_name === colName)
+                    .map((book) => (
+                      <motion.div key={book.id} variants={fadeInUp}>
+                        <BookCard book={book} />
+                      </motion.div>
+                    ))}
+                </div>
+              </motion.section>
+            ))}
+          </div>
         )}
       </div>
+
+      {/* FOOTER MINI */}
+      <footer className="bg-stone-900 text-stone-400 py-20 px-6 mt-20">
+        <div className="max-w-7xl mx-auto grid md:grid-cols-3 gap-12">
+          <div className="space-y-4">
+            <h4 className="font-serif text-2xl text-white italic">Karuna Book Center</h4>
+            <p className="text-sm leading-relaxed max-w-xs">Your sanctuary for timeless literature and modern thoughts. Curating the best for the curious mind.</p>
+          </div>
+          <div className="flex flex-col gap-2 uppercase text-[10px] font-bold tracking-[0.2em]">
+            <span className="text-stone-500 mb-2">Connect</span>
+            <a href="#" className="hover:text-teal-400 transition-colors">Instagram</a>
+            <a href="#" className="hover:text-teal-400 transition-colors">Twitter</a>
+            <a href="#" className="hover:text-teal-400 transition-colors">Newsletter</a>
+          </div>
+          <div className="text-right flex flex-col justify-end">
+            <p className="text-[10px] font-medium tracking-widest uppercase">© 2026 Karuna Book Center • All Rights Reserved</p>
+          </div>
+        </div>
+      </footer>
     </main>
   );
 }
