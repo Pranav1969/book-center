@@ -6,11 +6,11 @@ import Link from "next/link";
 import ReactMarkdown from "react-markdown";
 import BookCard from "@/components/BookCard";
 import { useCart } from "@/context/CartContext";
+import { motion } from "framer-motion";
 
 export default function BookDetail() {
   const params = useParams();
   const id = params?.id;
-
   const { addToCart } = useCart();
 
   const [book, setBook] = useState<any>(null);
@@ -19,32 +19,21 @@ export default function BookDetail() {
 
   useEffect(() => {
     if (!id) return;
-
     async function fetchFullData() {
       setLoading(true);
-
-      // ✅ Fetch current book (safe)
       const { data: currentBook, error } = await supabase
         .from("books")
         .select("*")
         .eq("id", id)
         .maybeSingle();
 
-      if (error) {
-        console.error("Fetch Error:", error);
-        setLoading(false);
-        return;
-      }
-
-      if (!currentBook) {
+      if (error || !currentBook) {
         setBook(null);
         setLoading(false);
         return;
       }
-
       setBook(currentBook);
 
-      // ✅ Related logic (category based)
       const { data: related } = await supabase
         .from("books")
         .select("*")
@@ -53,166 +42,187 @@ export default function BookDetail() {
         .limit(4);
 
       setRelatedBooks((related || []).filter(Boolean));
-
       setLoading(false);
     }
-
     fetchFullData();
   }, [id]);
 
-  // ✅ Loading State
-  if (loading)
-    return (
-      <div className="p-20 text-center font-serif animate-pulse text-stone-400">
-        Opening the vault...
+  if (loading) return (
+    <div className="min-h-screen bg-[#05010d] flex items-center justify-center">
+      <div className="text-center space-y-4">
+        <div className="w-12 h-12 border-2 border-purple-500/20 border-t-purple-500 rounded-full animate-spin mx-auto" />
+        <p className="font-serif italic text-gray-500 animate-pulse">Unveiling the Masterpiece...</p>
       </div>
-    );
+    </div>
+  );
 
-  // ✅ Not found State
-  if (!book)
-    return (
-      <div className="p-20 text-center font-serif">
-        Title not found in our records.
-      </div>
-    );
+  if (!book) return (
+    <div className="min-h-screen bg-[#05010d] flex items-center justify-center text-gray-400 font-serif">
+      This edition is currently unavailable in the vault.
+    </div>
+  );
 
-  // ✅ Price Logic
   const discount = Number(book?.discount_percent) || 0;
   const actualPrice = Number(book?.price) || 0;
   const finalPrice = actualPrice - (actualPrice * discount) / 100;
 
   return (
-    <main className="min-h-screen bg-[#fcfaf7] pb-32">
+    <main className="min-h-screen bg-[#05010d] text-gray-200 selection:bg-purple-500/30">
       
-      {/* Breadcrumbs */}
-      <nav className="max-w-7xl mx-auto px-6 py-8 flex items-center gap-2 text-[10px] uppercase tracking-[0.2em] font-bold text-stone-400">
-        <Link href="/" className="hover:text-stone-900">Library</Link>
-        <span>/</span>
-        <span className="text-stone-600">
-          {book?.collection_name || book?.category || "General"}
-        </span>
-        <span>/</span>
-        <span className="text-stone-900 truncate max-w-[150px]">
-          {book?.title}
-        </span>
+      {/* 🧭 NAVIGATION BREADCRUMBS */}
+      <nav className="max-w-7xl mx-auto px-6 py-10 flex items-center gap-3 text-[9px] uppercase tracking-[0.4em] font-black text-gray-500">
+        <Link href="/" className="hover:text-purple-400 transition-colors">Archive</Link>
+        <span className="text-gray-800">/</span>
+        <span className="text-gray-400">{book?.category || "General"}</span>
+        <span className="text-gray-800">/</span>
+        <span className="text-white truncate max-w-[120px]">{book?.title}</span>
       </nav>
 
-      <section className="max-w-6xl mx-auto px-6 grid grid-cols-1 md:grid-cols-2 gap-16 py-4">
+      <div className="max-w-7xl mx-auto px-6 grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-24">
         
-        {/* IMAGE SECTION */}
-        <div className="space-y-8">
-          <div className="relative bg-white shadow-2xl border aspect-[3/4] overflow-hidden sticky top-24">
+        {/* 🎨 VISUAL DISPLAY SECTION */}
+        <motion.div 
+          initial={{ opacity: 0, x: -20 }} 
+          animate={{ opacity: 1, x: 0 }}
+          className="lg:col-span-6 space-y-12"
+        >
+          <div className="group relative bg-gradient-to-b from-white/5 to-transparent p-4 md:p-12 rounded-[3rem] border border-white/10 overflow-hidden">
+            {/* Background Glow */}
+            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-64 h-64 bg-purple-600/20 blur-[120px] pointer-events-none" />
             
-            {discount > 0 && (
-              <div className="absolute top-4 left-4 z-30 bg-red-600 text-white text-[10px] px-3 py-1 font-bold">
-                {discount}% OFF
-              </div>
-            )}
-
-            {/* BACK IMAGE */}
-            <img
-              src={book?.back_image_url || book?.image_url}
-              alt="Back Cover"
-              className="absolute inset-0 w-full h-full object-cover"
-            />
-
-            {/* FRONT IMAGE (Auto Slide) */}
-            <img
-              src={book?.image_url || "/placeholder.jpg"}
-              alt={book?.title}
-              className="absolute inset-0 w-full h-full object-cover animate-slide"
-            />
-          </div>
-        </div>
-
-        {/* TEXT SECTION */}
-        <div className="flex flex-col">
-          <h1 className="text-5xl md:text-6xl font-serif font-bold text-stone-900">
-            {book?.title}
-          </h1>
-
-          {/* UPDATED AUTHOR SECTION WITH LINK */}
-          <div className="mt-4">
-            <p className="text-lg text-stone-600 font-serif italic">
-              By{" "}
-              <Link 
-                href={`/author/${encodeURIComponent(book?.author || "Unknown")}`}
-                className="hover:text-teal-600 transition-colors underline underline-offset-4 decoration-stone-300"
-              >
-                {book?.author || "Unknown Author"}
-              </Link>
-            </p>
-          </div>
-
-          <p className="text-[10px] font-bold uppercase text-stone-400 mt-2">
-            Published by: {book?.publication || "Karuna Publications"}
-          </p>
-
-          <div className="h-px bg-stone-200 my-8" />
-
-          {/* Description */}
-          <div className="prose prose-sm text-stone-700 min-h-[200px]">
-            <h4 className="text-[10px] uppercase font-bold text-stone-400 mb-4">
-              About this title
-            </h4>
-            <ReactMarkdown>
-              {book?.description || "No summary available."}
-            </ReactMarkdown>
-          </div>
-
-          {/* Desktop Buy */}
-          <div className="mt-12 hidden md:flex items-center gap-8">
-            <div>
+            <div className="relative aspect-[3/4.5] rounded-2xl overflow-hidden shadow-[0_50px_100px_-20px_rgba(0,0,0,0.5)]">
+               {/* Image Switcher/Slider Logic */}
+              <img
+                src={book?.image_url || "/placeholder.jpg"}
+                alt={book?.title}
+                className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
+              />
+              
               {discount > 0 && (
-                <span className="text-sm text-red-500 line-through">
-                  ₹{actualPrice.toFixed(0)}
-                </span>
+                <div className="absolute top-6 right-6 z-30 bg-purple-600 text-white text-[10px] px-4 py-1.5 font-black rounded-full shadow-xl">
+                  {discount}% PRIVILEGE
+                </div>
               )}
-              <div className="text-4xl font-black">
-                ₹{finalPrice.toFixed(0)}
-              </div>
+            </div>
+          </div>
+
+          {/* Thumbnail Gallery (Simulated) */}
+          <div className="flex gap-4 justify-center">
+             <div className="w-16 h-20 rounded-lg border border-purple-500/50 overflow-hidden opacity-100 cursor-pointer">
+                <img src={book?.image_url} className="w-full h-full object-cover" />
+             </div>
+             {book?.back_image_url && (
+                <div className="w-16 h-20 rounded-lg border border-white/10 overflow-hidden opacity-40 hover:opacity-100 transition-opacity cursor-pointer">
+                  <img src={book?.back_image_url} className="w-full h-full object-cover" />
+                </div>
+             )}
+          </div>
+        </motion.div>
+
+        {/* 🖋 CONTENT SECTION */}
+        <motion.div 
+          initial={{ opacity: 0, y: 20 }} 
+          animate={{ opacity: 1, y: 0 }}
+          className="lg:col-span-6 flex flex-col justify-center"
+        >
+          <div className="space-y-2 mb-6">
+            <span className="text-purple-500 text-[10px] font-black uppercase tracking-[0.5em]">Available Edition</span>
+            <h1 className="text-5xl md:text-7xl font-serif italic text-white leading-tight tracking-tighter">
+              {book?.title}
+            </h1>
+          </div>
+
+          <div className="flex items-center gap-4 mb-10">
+            <div className="h-[1px] w-12 bg-purple-500/50" />
+            <Link 
+              href={`/author/${encodeURIComponent(book?.author || "Unknown")}`}
+              className="text-xl text-gray-400 font-serif italic hover:text-white transition-colors"
+            >
+              Curation by {book?.author || "Unknown Author"}
+            </Link>
+          </div>
+
+          {/* Luxury Pricing Card */}
+          <div className="bg-white/[0.03] backdrop-blur-xl border border-white/10 p-8 rounded-[2rem] mb-12 flex flex-col md:flex-row md:items-center justify-between gap-8">
+            <div className="space-y-1">
+               <p className="text-[10px] font-bold text-gray-500 uppercase tracking-widest">Investment</p>
+               <div className="flex items-baseline gap-3">
+                 <span className="text-4xl font-serif text-white">₹{finalPrice.toFixed(0)}</span>
+                 {discount > 0 && (
+                   <span className="text-sm text-gray-600 line-through">₹{actualPrice.toFixed(0)}</span>
+                 )}
+               </div>
             </div>
 
             <button
               onClick={() => addToCart({ ...book, price: finalPrice })}
-              className="flex-1 bg-stone-900 text-white py-5 text-xs font-bold uppercase hover:bg-teal-900 transition-colors"
+              className="px-10 py-5 bg-white text-black text-[10px] font-black uppercase tracking-[0.2em] rounded-full hover:bg-purple-600 hover:text-white transition-all shadow-2xl hover:shadow-purple-500/20 active:scale-95"
             >
               Add to Collection
             </button>
           </div>
-        </div>
-      </section>
 
-      {/* RELATED BOOKS */}
+          {/* Description Section */}
+          <div className="space-y-6">
+            <div className="flex items-center gap-3">
+              <h4 className="text-[10px] uppercase font-black tracking-[0.3em] text-gray-500">The Narrative</h4>
+              <div className="h-[1px] flex-1 bg-white/5" />
+            </div>
+            <div className="prose prose-invert prose-purple max-w-none text-gray-400 leading-relaxed font-light">
+              <ReactMarkdown>
+                {book?.description || "No summary available for this restricted title."}
+              </ReactMarkdown>
+            </div>
+          </div>
+
+          {/* Meta Stats */}
+          <div className="grid grid-cols-2 gap-8 mt-12 pt-12 border-t border-white/5">
+            <div>
+              <p className="text-[9px] font-bold text-gray-600 uppercase tracking-widest">Publication</p>
+              <p className="text-sm text-gray-300 mt-1">{book?.publication || "Karuna Publications"}</p>
+            </div>
+            <div>
+               <p className="text-[9px] font-bold text-gray-600 uppercase tracking-widest">Category</p>
+               <p className="text-sm text-gray-300 mt-1">{book?.category || "General Archive"}</p>
+            </div>
+          </div>
+        </motion.div>
+      </div>
+
+      {/* 📚 RELATED ARCHIVE SECTION */}
       {relatedBooks.length > 0 && (
-        <section className="max-w-6xl mx-auto px-6 mt-32">
-          <h2 className="text-xl font-serif font-bold italic mb-8 border-b pb-4">
-            More from {book?.category || book?.collection_name}
-          </h2>
+        <section className="max-w-7xl mx-auto px-6 mt-40 pb-20">
+          <div className="flex items-center justify-between mb-12">
+            <h2 className="text-3xl font-serif italic text-white">
+              Related <span className="text-purple-500 underline underline-offset-8 decoration-white/10">Volumes</span>
+            </h2>
+            <Link href="/shop" className="text-[10px] font-bold uppercase tracking-widest text-gray-500 hover:text-purple-400">View All</Link>
+          </div>
 
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-6 md:gap-10">
             {relatedBooks.map((r) => (
-              <BookCard key={r.id} book={r} />
+              <div key={r.id} className="transform hover:-translate-y-2 transition-transform duration-500">
+                <BookCard book={r} />
+              </div>
             ))}
           </div>
         </section>
       )}
 
-      {/* MOBILE BAR */}
-      <div className="fixed bottom-0 left-0 right-0 bg-white border-t p-4 md:hidden flex justify-between items-center z-50">
-        <div>
-          <span className="text-[10px] text-stone-400">Total</span>
-          <div className="text-xl font-black">
-            ₹{finalPrice.toFixed(0)}
+      {/* 📱 MOBILE PERSISTENT BAR (Premium) */}
+      <div className="fixed bottom-6 left-6 right-6 md:hidden z-[60]">
+        <div className="bg-black/60 backdrop-blur-2xl border border-white/10 p-4 rounded-3xl flex justify-between items-center shadow-2xl">
+          <div>
+            <span className="text-[8px] uppercase tracking-tighter text-gray-500">Final Valuation</span>
+            <div className="text-lg font-serif text-white">₹{finalPrice.toFixed(0)}</div>
           </div>
+          <button
+            onClick={() => addToCart({ ...book, price: finalPrice })}
+            className="bg-white text-black px-8 py-3 rounded-2xl text-[9px] font-black uppercase tracking-widest active:scale-95"
+          >
+            Collect
+          </button>
         </div>
-
-        <button
-          onClick={() => addToCart({ ...book, price: finalPrice })}
-          className="bg-stone-900 text-white px-6 py-3 text-[10px] font-bold uppercase"
-        >
-          Add to Cart
-        </button>
       </div>
     </main>
   );
