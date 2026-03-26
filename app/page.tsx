@@ -112,9 +112,8 @@ export default function Home() {
   if (loading) return (
     <div className="flex h-screen items-center justify-center bg-[#05010d]">
       <div className="relative flex flex-col items-center">
-        <div className="w-20 h-20 border-2 border-purple-500/20 border-t-purple-500 rounded-full animate-spin"></div>
-        <div className="absolute inset-0 w-20 h-20 border-2 border-transparent border-b-indigo-400 rounded-full animate-reverse-spin opacity-50"></div>
-        <p className="mt-8 font-serif italic text-purple-300/60 tracking-widest animate-pulse">Curating Excellence...</p>
+        <div className="w-16 h-16 border-2 border-purple-500/20 border-t-purple-500 rounded-full animate-spin"></div>
+        <p className="mt-6 font-serif italic text-purple-300/60 tracking-widest text-sm animate-pulse">Curating Luxe...</p>
       </div>
     </div>
   );
@@ -129,7 +128,7 @@ export default function Home() {
       <motion.div className="fixed top-0 left-0 right-0 h-1 bg-gradient-to-r from-purple-600 to-indigo-400 z-[100] origin-left" style={{ scaleX }} />
 
       {/* 🎭 LUXURY HERO SECTION */}
-      <section className="relative h-[85vh] md:h-[95vh] w-full overflow-hidden">
+      <section className="relative h-[70vh] md:h-[95vh] w-full overflow-hidden">
         <AnimatePresence mode="wait">
           <motion.div
             key={currentSlide}
@@ -143,156 +142,135 @@ export default function Home() {
               <img 
                 src={banners[currentSlide].image_url} 
                 alt="Banner"
-                className="w-full h-full object-cover opacity-60"
+                className="w-full h-full object-cover opacity-50"
               />
             ) : (
               <div className="w-full h-full bg-gradient-to-br from-purple-950 to-black" />
             )}
-            {/* Cinematic Gradient Overlays */}
-            <div className="absolute inset-0 bg-gradient-to-t from-[#05010d] via-[#05010d]/40 to-transparent" />
-            <div className="absolute inset-0 bg-gradient-to-r from-[#05010d] via-transparent to-[#05010d]/40" />
+            <div className="absolute inset-0 bg-gradient-to-t from-[#05010d] via-transparent to-transparent md:via-[#05010d]/40" />
           </motion.div>
         </AnimatePresence>
 
-        <div className="relative z-20 flex flex-col items-center justify-center h-full px-6">
+        <div className="relative z-20 flex flex-col items-center justify-center h-full px-4 text-center">
           <motion.div
-            initial={{ y: 60, opacity: 0 }}
+            initial={{ y: 30, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
-            transition={{ delay: 0.4, duration: 1, ease: [0.16, 1, 0.3, 1] }}
-            className="w-full max-w-6xl text-center"
+            transition={{ delay: 0.2, duration: 0.8 }}
+            className="w-full max-w-5xl"
           >
-            <span className="inline-block px-5 py-2 mb-8 text-[11px] font-bold tracking-[0.4em] uppercase bg-purple-500/10 backdrop-blur-xl border border-purple-500/20 text-purple-300 rounded-full shadow-[0_0_20px_rgba(168,85,247,0.15)]">
+            <span className="inline-block px-4 py-1.5 mb-6 text-[9px] md:text-[11px] font-bold tracking-[0.3em] uppercase bg-purple-500/10 backdrop-blur-md border border-white/10 text-purple-300 rounded-full">
               The Sovereign Collection
             </span>
-            <h1 className="font-serif text-6xl md:text-[10rem] text-white mb-10 italic leading-[0.85] tracking-tight">
-              Karuna <span className="text-transparent bg-clip-text bg-gradient-to-b from-purple-300 to-purple-600 drop-shadow-2xl">Luxe</span>
+            <h1 className="font-serif text-5xl md:text-[9rem] text-white mb-8 italic leading-[1] tracking-tighter">
+              Karuna <span className="text-transparent bg-clip-text bg-gradient-to-b from-purple-200 to-purple-600">Luxe</span>
             </h1>
             
-            <div className="max-w-3xl mx-auto relative group">
-              <div className="absolute -inset-1 bg-gradient-to-r from-purple-600 to-indigo-600 rounded-2xl blur-xl opacity-20 group-focus-within:opacity-40 transition duration-1000"></div>
-              <div className="relative flex items-center bg-white/5 backdrop-blur-2xl border border-white/10 rounded-2xl overflow-hidden p-1 shadow-2xl transition-all duration-500 group-focus-within:border-purple-500/50">
+            <div className="max-w-2xl mx-auto relative group px-2">
+              <div className="absolute -inset-1 bg-purple-600/20 rounded-2xl blur-lg group-focus-within:opacity-100 opacity-0 transition duration-1000"></div>
+              <div className="relative flex items-center bg-white/5 backdrop-blur-xl border border-white/10 rounded-xl overflow-hidden shadow-2xl">
                 <input 
                   type="text" 
                   value={searchQuery}
                   onChange={onSearchChange}
-                  placeholder="Find your next masterpiece..." 
-                  className="w-full bg-transparent py-5 md:py-6 px-8 text-white outline-none placeholder:text-gray-500 font-light text-lg"
+                  placeholder="Find a masterpiece..." 
+                  className="w-full bg-transparent py-4 md:py-6 px-6 text-white outline-none placeholder:text-gray-500 text-sm md:text-lg"
                 />
-                <button className="mr-2 w-14 h-14 flex items-center justify-center bg-purple-600 text-white rounded-xl hover:bg-purple-500 transition-all hover:shadow-[0_0_20px_rgba(168,85,247,0.5)]">
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <button className="mr-2 w-10 h-10 md:w-14 md:h-14 flex items-center justify-center bg-purple-600 text-white rounded-lg hover:bg-purple-500 transition-all">
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                   </svg>
                 </button>
               </div>
             </div>
           </motion.div>
-
-          {/* Luxury Slide Indicators */}
-          <div className="absolute bottom-16 flex gap-4">
-            {banners.map((_, idx) => (
-              <button 
-                key={idx}
-                onClick={() => setCurrentSlide(idx)}
-                className={`h-1.5 transition-all duration-700 rounded-full ${idx === currentSlide ? 'w-16 bg-purple-500 shadow-[0_0_15px_rgba(168,85,247,0.8)]' : 'w-4 bg-white/20 hover:bg-white/40'}`}
-              />
-            ))}
-          </div>
         </div>
       </section>
 
-      {/* 🎊 PREMIUM CAMPAIGN BANNER */}
+      {/* 🎊 CAMPAIGN SECTION - Reduced Mobile Spacing */}
       {campaign && !searchQuery && selectedCategory === "All" && (
         <motion.section 
-          initial={{ opacity: 0, scale: 0.95 }}
-          whileInView={{ opacity: 1, scale: 1 }}
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
-          transition={{ duration: 1 }}
-          className="max-w-7xl mx-auto px-6 -mt-24 relative z-30"
+          className="max-w-7xl mx-auto px-4 -mt-12 md:-mt-24 relative z-30"
         >
-          <div className="group relative bg-[#0d071a] rounded-[2.5rem] overflow-hidden flex flex-col md:flex-row items-center border border-white/10 shadow-2xl">
-            <div className="absolute top-0 left-0 w-full h-full bg-[radial-gradient(circle_at_30%_30%,rgba(168,85,247,0.1),transparent)] pointer-events-none" />
-            
-            <div className="p-12 md:p-24 md:w-1/2 space-y-8 relative z-10">
-              <div className="flex items-center gap-3">
-                <span className="w-12 h-[1px] bg-purple-500" />
-                <span className="text-[11px] font-black uppercase tracking-[0.3em] text-purple-400">Exclusive Event</span>
-              </div>
-              <h2 className="font-serif text-5xl md:text-7xl text-white italic leading-tight">
-                {campaign.title}
-              </h2>
-              <p className="text-gray-400 font-light text-xl leading-relaxed max-w-md">
-                {campaign.description}
-              </p>
-              <Link 
-                href={campaign.target_url || "#"} 
-                className="group relative inline-flex items-center gap-4 bg-white text-black px-10 py-5 rounded-full text-[11px] font-bold uppercase tracking-widest hover:bg-purple-500 hover:text-white transition-all duration-500"
-              >
-                {campaign.button_text || "Discover Now"}
-                <div className="absolute inset-0 rounded-full group-hover:blur-xl group-hover:bg-purple-500/50 transition-all -z-10" />
+          <div className="group relative bg-[#0d071a] rounded-3xl overflow-hidden flex flex-col md:flex-row items-center border border-white/5 shadow-2xl">
+            <div className="p-8 md:p-20 md:w-1/2 space-y-6">
+              <span className="text-[10px] font-black uppercase tracking-widest text-purple-400">Featured Highlight</span>
+              <h2 className="font-serif text-3xl md:text-6xl text-white italic leading-tight">{campaign.title}</h2>
+              <p className="text-gray-400 text-sm md:text-lg font-light leading-relaxed">{campaign.description}</p>
+              <Link href={campaign.target_url || "#"} className="inline-flex items-center gap-3 bg-white text-black px-8 py-3.5 rounded-full text-[10px] font-bold uppercase tracking-widest hover:bg-purple-600 hover:text-white transition-all">
+                {campaign.button_text || "Explore"}
               </Link>
             </div>
-            <div className="md:w-1/2 w-full h-[400px] md:h-[650px] overflow-hidden relative">
-              <img src={campaign.image_url} className="w-full h-full object-cover transition-transform duration-[2s] group-hover:scale-110" alt="Campaign" />
-              <div className="absolute inset-0 bg-gradient-to-r from-[#0d071a] via-transparent to-transparent" />
+            <div className="md:w-1/2 w-full h-64 md:h-[500px] overflow-hidden">
+              <img src={campaign.image_url} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-1000" alt="Campaign" />
             </div>
           </div>
         </motion.section>
       )}
 
-      {/* ✅ GLASS CATEGORY NAV */}
-      <nav className="sticky top-0 z-50 bg-[#05010d]/80 backdrop-blur-2xl border-b border-white/5">
-        <div className="max-w-7xl mx-auto px-6 h-24 flex items-center">
-          <div className="flex items-center gap-12 w-full overflow-x-auto no-scrollbar">
-            <span className="text-[10px] font-black uppercase tracking-[0.2em] text-purple-500/60 border border-purple-500/20 px-3 py-1 rounded-md">
-              Collection
-            </span>
-            <div className="flex gap-4">
-              {categories.map((cat) => (
-                <button
-                  key={cat}
-                  onClick={() => { setSelectedCategory(cat); applyFilters(searchQuery, cat); }}
-                  className={`relative px-6 py-2 rounded-full text-[12px] font-medium tracking-widest transition-all whitespace-nowrap ${
-                    selectedCategory === cat 
-                    ? 'text-white' 
-                    : 'text-gray-500 hover:text-gray-300'
-                  }`}
-                >
-                  {cat}
-                  {selectedCategory === cat && (
-                    <motion.div 
-                      layoutId="activePill" 
-                      className="absolute inset-0 bg-purple-600/20 border border-purple-500/30 rounded-full -z-10"
-                      transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
-                    />
-                  )}
-                </button>
-              ))}
-            </div>
+      {/* ✅ CATEGORY NAV */}
+      <nav className="sticky top-0 z-50 bg-[#05010d]/90 backdrop-blur-xl border-b border-white/5 overflow-hidden">
+        <div className="max-w-7xl mx-auto px-4 h-16 md:h-20 flex items-center">
+          <div className="flex gap-2 overflow-x-auto no-scrollbar py-2">
+            {categories.map((cat) => (
+              <button
+                key={cat}
+                onClick={() => { setSelectedCategory(cat); applyFilters(searchQuery, cat); }}
+                className={`px-5 py-2 rounded-full text-[10px] font-bold uppercase tracking-widest transition-all whitespace-nowrap ${
+                  selectedCategory === cat ? 'bg-purple-600 text-white' : 'text-gray-500 hover:text-gray-300'
+                }`}
+              >
+                {cat}
+              </button>
+            ))}
           </div>
         </div>
       </nav>
 
-      {/* ✅ BEST SELLERS: CAROUSEL EXPERIENCE */}
+      {/* ✅ BEST SELLERS */}
       {selectedCategory === "All" && bestSellers.length > 0 && !searchQuery && (
-        <section className="py-32 relative overflow-hidden">
-          <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-purple-600/10 blur-[120px] rounded-full -mr-64 -mt-64" />
-          <div className="max-w-7xl mx-auto px-6">
-            <div className="mb-16">
-              <h2 className="font-serif text-5xl md:text-6xl text-white italic mb-4">The Bestsellers</h2>
-              <p className="text-gray-500 text-lg font-light tracking-wide">Timeless works that define our era.</p>
+        <section className="py-12 md:py-24 px-4">
+          <div className="max-w-7xl mx-auto">
+            <div className="mb-10 md:mb-16">
+              <h2 className="font-serif text-3xl md:text-5xl text-white italic">Bestsellers</h2>
+              <div className="w-20 h-1 bg-purple-600 mt-4 rounded-full" />
             </div>
-            <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-10">
+            <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4 md:gap-10">
               {bestSellers.map((book) => (
-                <motion.div 
-                  key={book.id}
-                  whileHover={{ y: -15 }}
-                  className="relative group"
-                >
-                  <div className="absolute -top-4 -right-2 z-30 bg-gradient-to-r from-purple-600 to-indigo-600 text-white text-[10px] font-black px-4 py-1.5 rounded-full shadow-2xl border border-white/20 transform -rotate-12 group-hover:rotate-0 transition-transform">
-                    BEST SELLER
-                  </div>
+                <div key={book.id} className="relative group">
+                  <div className="absolute top-2 right-2 z-10 bg-purple-600 text-[8px] font-bold px-2 py-0.5 rounded shadow-lg">TOP</div>
                   <BookCard book={book} />
-                </motion.div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+      )}
+
+      {/* 📖 ABOUT US SECTION (NEW) */}
+      {!searchQuery && selectedCategory === "All" && (
+        <section className="py-16 md:py-32 px-4 relative bg-[#080212]">
+          <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full max-w-3xl h-full bg-purple-600/5 blur-[120px] rounded-full pointer-events-none" />
+          <div className="max-w-5xl mx-auto text-center space-y-12 relative z-10">
+            <motion.div initial={{ opacity: 0 }} whileInView={{ opacity: 1 }} viewport={{ once: true }}>
+              <span className="text-purple-500 text-[10px] font-black uppercase tracking-[0.5em]">Our Heritage</span>
+              <h2 className="font-serif text-4xl md:text-7xl text-white italic mt-6">Where literature meets luxury.</h2>
+              <p className="mt-8 text-gray-400 text-sm md:text-xl font-light leading-relaxed max-w-3xl mx-auto">
+                Karuna Luxe was born from a singular vision: to treat every book not just as a product, but as a masterpiece. We curate only the finest works, ensuring your personal library reflects a standard of unparalleled excellence.
+              </p>
+            </motion.div>
+            <div className="grid md:grid-cols-3 gap-6 pt-12">
+              {[
+                { title: "Curated Selection", desc: "Every title is hand-vetted by our literary experts." },
+                { title: "Premium Editions", desc: "Exclusive access to rare prints and luxury bindings." },
+                { title: "Fast Concierge", desc: "Swift, white-glove delivery for every connoisseur." }
+              ].map((item, i) => (
+                <div key={i} className="p-8 rounded-2xl bg-white/5 border border-white/10 backdrop-blur-sm text-left hover:border-purple-500/50 transition-colors group">
+                  <h4 className="font-serif text-xl text-white italic mb-3 group-hover:text-purple-400 transition-colors">{item.title}</h4>
+                  <p className="text-gray-500 text-xs md:text-sm leading-relaxed">{item.desc}</p>
+                </div>
               ))}
             </div>
           </div>
@@ -300,48 +278,27 @@ export default function Home() {
       )}
 
       {/* MAIN CONTENT GRID */}
-      <div className="max-w-7xl mx-auto px-6 py-24 relative">
-        <div className="absolute top-1/2 left-0 w-[600px] h-[600px] bg-indigo-600/5 blur-[150px] rounded-full -ml-96 pointer-events-none" />
-        
+      <div className="max-w-7xl mx-auto px-4 py-16 md:py-24">
         {filteredBooks.length === 0 ? (
-          <div className="py-60 text-center">
-            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
-              <h3 className="font-serif italic text-4xl text-gray-700 mb-8">The archive is silent...</h3>
-              <button onClick={resetAll} className="px-8 py-4 bg-white/5 border border-white/10 rounded-full text-purple-400 text-xs font-bold uppercase tracking-widest hover:bg-purple-500 hover:text-white transition-all">
-                Clear all filters
-              </button>
-            </motion.div>
+          <div className="py-20 text-center">
+            <h3 className="font-serif italic text-2xl text-gray-600">No masterpieces found...</h3>
+            <button onClick={resetAll} className="mt-6 text-purple-500 text-xs font-bold uppercase tracking-widest border-b border-purple-500 pb-1">Reset</button>
           </div>
         ) : (
-          <div className="space-y-40">
+          <div className="space-y-24 md:space-y-40">
             {collections.map((colName) => (
-              <motion.section 
-                key={colName}
-                initial="initial"
-                whileInView="animate"
-                viewport={{ once: true, margin: "-100px" }}
-                variants={staggerContainer}
-                className="scroll-mt-32"
-              >
-                <div className="flex items-end justify-between mb-16 border-b border-white/5 pb-8">
-                  <div className="flex items-center gap-8">
-                    <h3 className="font-serif text-4xl md:text-5xl italic font-light text-white tracking-tight">
-                      {colName}
-                    </h3>
-                    <span className="text-[11px] text-purple-500 font-black uppercase tracking-[0.3em] bg-purple-500/10 px-4 py-1.5 rounded-full">
-                      {filteredBooks.filter(b => b.collection_name === colName).length} Vol.
-                    </span>
-                  </div>
+              <motion.section key={colName} initial="initial" whileInView="animate" viewport={{ once: true, margin: "-100px" }} variants={staggerContainer}>
+                <div className="flex items-center gap-6 mb-10 md:mb-16">
+                  <h3 className="font-serif text-2xl md:text-4xl italic text-white shrink-0">{colName}</h3>
+                  <div className="h-[1px] bg-white/10 w-full" />
+                  <span className="text-[9px] text-gray-500 font-bold uppercase tracking-widest shrink-0">{filteredBooks.filter(b => b.collection_name === colName).length} Works</span>
                 </div>
-
-                <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-x-12 gap-y-24">
-                  {filteredBooks
-                    .filter((b) => b.collection_name === colName)
-                    .map((book) => (
-                      <motion.div key={book.id} variants={fadeInUp} className="relative group">
-                        <BookCard book={book} />
-                      </motion.div>
-                    ))}
+                <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-x-6 gap-y-12 md:gap-x-12 md:gap-y-24">
+                  {filteredBooks.filter((b) => b.collection_name === colName).map((book) => (
+                    <motion.div key={book.id} variants={fadeInUp}>
+                      <BookCard book={book} />
+                    </motion.div>
+                  ))}
                 </div>
               </motion.section>
             ))}
@@ -350,39 +307,26 @@ export default function Home() {
       </div>
 
       {/* 🏛 LUXURY FOOTER */}
-      <footer className="relative bg-[#020005] pt-40 pb-20 px-6 overflow-hidden">
-        <div className="absolute top-0 left-0 w-full h-[1px] bg-gradient-to-r from-transparent via-purple-500/50 to-transparent" />
-        <div className="max-w-7xl mx-auto relative z-10">
-          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-20 mb-32">
-            <div className="space-y-8 col-span-2">
-              <h4 className="font-serif text-5xl text-white italic tracking-tighter">Karuna Luxe</h4>
-              <p className="text-gray-500 text-xl font-light leading-relaxed max-w-md">
-                Dedicated to the curation of human thought. We provide an elevated literary experience for the modern connoisseur.
-              </p>
-            </div>
-            <div className="flex flex-col gap-6 uppercase text-[11px] font-bold tracking-[0.3em]">
-              <span className="text-purple-500/60">Curation</span>
-              <a href="#" className="text-gray-300 hover:text-white transition-colors">Private Library</a>
-              <a href="#" className="text-gray-300 hover:text-white transition-colors">First Editions</a>
-              <a href="#" className="text-gray-300 hover:text-white transition-colors">Membership</a>
-            </div>
-            <div className="flex flex-col gap-6 uppercase text-[11px] font-bold tracking-[0.3em]">
-              <span className="text-purple-500/60">Society</span>
-              <a href="#" className="text-gray-300 hover:text-white transition-colors">Instagram</a>
-              <a href="#" className="text-gray-300 hover:text-white transition-colors">Journal</a>
-              <a href="#" className="text-gray-300 hover:text-white transition-colors">Concierge</a>
-            </div>
+      <footer className="bg-[#020005] pt-20 pb-10 px-6 border-t border-white/5">
+        <div className="max-w-7xl mx-auto grid md:grid-cols-4 gap-12 mb-16">
+          <div className="col-span-2">
+            <h4 className="font-serif text-3xl text-white italic mb-6">Karuna Luxe</h4>
+            <p className="text-gray-500 text-sm font-light max-w-xs leading-relaxed">Redefining the literary experience for the modern era. Curating greatness since 2024.</p>
           </div>
-          
-          <div className="pt-12 border-t border-white/5 flex flex-col md:flex-row justify-between items-center gap-8">
-            <p className="text-[10px] font-medium tracking-[0.4em] uppercase text-gray-600">
-              © 2026 Karuna Book Center • A Luxury Literary Experience
-            </p>
-            <div className="flex gap-12 text-[10px] font-bold uppercase tracking-widest text-gray-600">
-              <a href="#" className="hover:text-purple-500 transition-colors">Terms</a>
-              <a href="#" className="hover:text-purple-500 transition-colors">Privacy</a>
-            </div>
+          <div className="flex flex-col gap-4 text-[10px] font-bold uppercase tracking-widest text-gray-500">
+            <span className="text-purple-500">Navigation</span>
+            <a href="#" className="hover:text-white transition-colors">Catalog</a>
+            <a href="#" className="hover:text-white transition-colors">Best Sellers</a>
+            <a href="#" className="hover:text-white transition-colors">About Us</a>
           </div>
+          <div className="flex flex-col gap-4 text-[10px] font-bold uppercase tracking-widest text-gray-500">
+            <span className="text-purple-500">Social</span>
+            <a href="#" className="hover:text-white transition-colors">Instagram</a>
+            <a href="#" className="hover:text-white transition-colors">Newsletter</a>
+          </div>
+        </div>
+        <div className="max-w-7xl mx-auto pt-8 border-t border-white/5 text-center md:text-left">
+          <p className="text-[9px] font-bold tracking-[0.3em] uppercase text-gray-700">© 2026 Karuna Book Center • Excellence in Print</p>
         </div>
       </footer>
     </main>
