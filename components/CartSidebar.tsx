@@ -5,6 +5,7 @@ import { QRCodeSVG } from "qrcode.react";
 import { useState, useMemo } from "react";
 import { supabase } from "@/app/lib/supabase";
 import { useRouter } from "next/navigation";
+import { motion, AnimatePresence } from "framer-motion";
 
 const STATES = ["Maharashtra", "Karnataka", "Goa", "Gujarat", "Delhi", "Other"];
 
@@ -14,7 +15,7 @@ export default function CartSidebar() {
 
   const [step, setStep] = useState<1 | 2>(1);
   const [loading, setLoading] = useState(false);
-  const [activeOrderId, setActiveOrderId] = useState<string | null>(null); // 👈 TRACK ORDER ID
+  const [activeOrderId, setActiveOrderId] = useState<string | null>(null);
   const [customer, setCustomer] = useState({
     name: "", phone: "", street: "", taluka: "", district: "", state: "Maharashtra", pincode: "",
   });
@@ -30,7 +31,6 @@ export default function CartSidebar() {
     return `upi://pay?pa=${VPA_ID}&pn=${encodeURIComponent(MERCHANT_NAME)}&am=${amount}&cu=INR&tn=${note}`;
   };
 
-  // STEP 1: CREATE ORDER
   const handleProceedToPayment = async () => {
     const { name, phone, street, taluka, district, pincode } = customer;
     if (!name || !phone || !street || !taluka || !district || !pincode) {
@@ -41,8 +41,6 @@ export default function CartSidebar() {
     setLoading(true);
     try {
       const fullAddress = `${street}, ${taluka}, ${district}, ${customer.state} - ${pincode}`;
-
-      // We select the inserted data back to get the generated ID
       const { data, error } = await supabase
         .from('orders')
         .insert([{
@@ -53,12 +51,12 @@ export default function CartSidebar() {
           items: cart, 
           status: 'pending'
         }])
-        .select() // 👈 THIS IS KEY: Gets the ID of the new order
+        .select()
         .single();
 
       if (error) throw error;
       
-      setActiveOrderId(data.id); // 👈 STORE THE ID
+      setActiveOrderId(data.id);
       setStep(2);
 
       if (/iPhone|iPad|iPod|Android/i.test(navigator.userAgent)) {
@@ -71,30 +69,19 @@ export default function CartSidebar() {
     }
   };
 
-  // STEP 2: VERIFY WITH UTR
   const handleVerifyPayment = async () => {
     if (utr.trim().length < 12) {
       alert("Please enter a valid 12-digit UTR.");
       return;
     }
-    if (!activeOrderId) {
-      alert("Order session expired. Please try again.");
-      return;
-    }
-
     setLoading(true);
     try {
-      // We update specifically by the UNIQUE ID we got in Step 1
       const { error } = await supabase
         .from('orders')
-        .update({ 
-          utr_number: utr.trim(), 
-          status: 'completed' 
-        })
-        .eq('id', activeOrderId); // 👈 USE THE ID, NOT THE PHONE
+        .update({ utr_number: utr.trim(), status: 'completed' })
+        .eq('id', activeOrderId);
 
       if (error) throw error;
-
       clearCart();
       setIsOpen(false);
       router.push("/success");
@@ -105,105 +92,166 @@ export default function CartSidebar() {
     }
   };
 
-  if (!isOpen) return null;
-
   return (
-    <>
-      <div className="fixed inset-0 bg-black/40 z-[100] backdrop-blur-sm" onClick={() => setIsOpen(false)} />
-      <div className="fixed top-0 right-0 h-full w-full max-w-md bg-white z-[101] shadow-2xl flex flex-col p-6 overflow-hidden">
-        
-        <div className="flex justify-between items-center mb-4 border-b pb-4">
-          <h2 className="font-serif text-xl font-bold italic">Checkout</h2>
-          <button onClick={() => setIsOpen(false)} className="text-[10px] font-bold uppercase text-stone-400">Close</button>
-        </div>
+    <AnimatePresence>
+      {isOpen && (
+        <>
+          {/* Backdrop */}
+          <motion.div 
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black/60 z-[100] backdrop-blur-md" 
+            onClick={() => setIsOpen(false)} 
+          />
 
-        {step === 1 ? (
-          <div className="flex flex-col h-full overflow-hidden">
-            <div className="flex-1 overflow-y-auto pr-2 space-y-6">
-              {/* Items List */}
-              <div className="space-y-3">
-                {cart.map((item) => (
-                  <div key={item.id} className="flex gap-3 items-center border-b pb-2">
-                    <img src={item.image_url} className="w-10 h-12 object-cover" alt="" />
-                    <div className="flex-1 text-[11px] font-bold">{item.title}</div>
-                    <button onClick={() => removeFromCart(item.id)} className="text-red-400 text-[9px]">Remove</button>
-                  </div>
-                ))}
-              </div>
-
-              {/* Form Fields */}
-              <div className="space-y-4 pt-4 border-t">
-                <input className="w-full border-b py-2 text-sm outline-none" placeholder="Full Name" onChange={(e) => setCustomer({...customer, name: e.target.value})} />
-                <input className="w-full border-b py-2 text-sm outline-none" placeholder="Phone" onChange={(e) => setCustomer({...customer, phone: e.target.value})} />
-                <input className="w-full border-b py-2 text-sm outline-none" placeholder="Address/Street" onChange={(e) => setCustomer({...customer, street: e.target.value})} />
-                <div className="grid grid-cols-2 gap-4">
-                  <input className="border-b py-2 text-sm outline-none" placeholder="Taluka" onChange={(e) => setCustomer({...customer, taluka: e.target.value})} />
-                  <input className="border-b py-2 text-sm outline-none" placeholder="District" onChange={(e) => setCustomer({...customer, district: e.target.value})} />
-                </div>
-                <div className="grid grid-cols-2 gap-4">
-                  <select className="border-b py-2 text-sm bg-transparent outline-none" value={customer.state} onChange={(e) => setCustomer({...customer, state: e.target.value})}>
-                    {STATES.map(s => <option key={s} value={s}>{s}</option>)}
-                  </select>
-                  <input className="border-b py-2 text-sm outline-none" placeholder="Pincode" maxLength={6} onChange={(e) => setCustomer({...customer, pincode: e.target.value})} />
-                </div>
-              </div>
-            </div>
-
-            <div className="pt-4 border-t mt-4">
-              <div className="flex justify-between items-end mb-4">
-                <span className="text-[10px] font-bold text-stone-400">Total</span>
-                <span className="text-2xl font-black italic">₹{total.toFixed(2)}</span>
-              </div>
-              <button 
-                disabled={loading || cart.length === 0}
-                onClick={handleProceedToPayment}
-                className="w-full bg-stone-900 text-white py-4 font-bold uppercase text-xs disabled:bg-stone-300"
-              >
-                {loading ? "Creating Order..." : "Proceed to Pay"}
-              </button>
-            </div>
-          </div>
-        ) : (
-          <div className="space-y-6">
-            <div className="bg-stone-50 p-6 flex flex-col items-center border rounded-sm">
-              <p className="text-[10px] font-bold mb-4 uppercase tracking-widest">Scan QR Code to Pay</p>
-              <QRCodeSVG value={generateUPILink()} size={180} />
-              <p className="mt-4 font-mono text-[11px] text-stone-900 font-bold">{total.toFixed(2)} INR</p>
-              <p className="text-[9px] text-stone-400 mt-1">{VPA_ID}</p>
-            </div>
+          {/* Sidebar */}
+          <motion.div 
+            initial={{ x: "100%" }}
+            animate={{ x: 0 }}
+            exit={{ x: "100%" }}
+            transition={{ type: "spring", damping: 25, stiffness: 200 }}
+            className="fixed top-0 right-0 h-full w-full max-w-md bg-[#0a0515] border-l border-white/10 z-[101] shadow-[ -20px_0_50px_rgba(0,0,0,0.5)] flex flex-col p-8 overflow-hidden text-gray-200"
+          >
             
-            <div className="space-y-4">
-              <div className="bg-amber-50 p-3 rounded-sm border border-amber-100">
-                <p className="text-[10px] text-amber-800 leading-relaxed">
-                  <strong>How to find UTR?</strong> After payment in GPay/PhonePe, check "Transaction Details". It is a 12-digit number starting with your bank's code.
-                </p>
+            {/* Header */}
+            <div className="flex justify-between items-end mb-8 border-b border-white/5 pb-6">
+              <div>
+                <h2 className="font-serif text-3xl italic text-white tracking-tighter">Checkout</h2>
+                <p className="text-[9px] font-black uppercase tracking-[0.3em] text-purple-500 mt-1">Secure Acquisition</p>
               </div>
-              
-              <input 
-                className="w-full bg-stone-100 p-4 text-center text-xl font-black tracking-[0.2em] outline-none border-2 border-transparent focus:border-stone-900" 
-                placeholder="0000 0000 0000"
-                maxLength={12}
-                onChange={(e) => setUtr(e.target.value)}
-              />
-              
               <button 
-                onClick={handleVerifyPayment}
-                disabled={loading}
-                className="w-full bg-green-600 text-white py-4 font-bold uppercase text-xs shadow-lg active:scale-[0.98] transition-transform"
+                onClick={() => setIsOpen(false)} 
+                className="text-[10px] font-black uppercase tracking-widest text-gray-500 hover:text-white transition-colors pb-1"
               >
-                {loading ? "Verifying..." : "Confirm Payment & Complete Order"}
-              </button>
-              
-              <button 
-                onClick={() => setStep(1)} 
-                className="w-full text-stone-400 text-[9px] font-bold uppercase tracking-widest"
-              >
-                ← Back to Details
+                Close
               </button>
             </div>
-          </div>
-        )}
-      </div>
-    </>
+
+            {step === 1 ? (
+              <div className="flex flex-col h-full overflow-hidden">
+                <div className="flex-1 overflow-y-auto pr-2 space-y-8 scrollbar-hide">
+                  
+                  {/* Item Summary */}
+                  <div className="space-y-4">
+                    <p className="text-[10px] font-black uppercase tracking-widest text-gray-500 mb-4">Your Selection ({cart.length})</p>
+                    {cart.map((item, idx) => (
+                      <motion.div 
+                        initial={{ opacity: 0, x: 20 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        transition={{ delay: idx * 0.1 }}
+                        key={item.id} 
+                        className="flex gap-4 items-center group"
+                      >
+                        <div className="w-12 h-16 bg-white/5 rounded-lg overflow-hidden shrink-0 border border-white/5">
+                            <img src={item.image_url} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" alt="" />
+                        </div>
+                        <div className="flex-1">
+                            <div className="text-[11px] font-bold text-white line-clamp-1">{item.title}</div>
+                            <div className="text-[10px] font-serif italic text-gray-500">₹{item.price}</div>
+                        </div>
+                        <button onClick={() => removeFromCart(item.id)} className="text-gray-600 hover:text-red-400 text-[10px] transition-colors">Remove</button>
+                      </motion.div>
+                    ))}
+                  </div>
+
+                  {/* Shipping Form */}
+                  <div className="space-y-5 pt-8 border-t border-white/5">
+                    <p className="text-[10px] font-black uppercase tracking-widest text-gray-500">Shipping Repository</p>
+                    <div className="space-y-4">
+                        <input className="w-full bg-white/5 border border-white/5 rounded-xl px-4 py-3 text-sm outline-none focus:border-purple-500/50 transition-all text-white placeholder:text-gray-700" placeholder="Recipient Name" onChange={(e) => setCustomer({...customer, name: e.target.value})} />
+                        <input className="w-full bg-white/5 border border-white/5 rounded-xl px-4 py-3 text-sm outline-none focus:border-purple-500/50 transition-all text-white placeholder:text-gray-700" placeholder="Contact Number" onChange={(e) => setCustomer({...customer, phone: e.target.value})} />
+                        <input className="w-full bg-white/5 border border-white/5 rounded-xl px-4 py-3 text-sm outline-none focus:border-purple-500/50 transition-all text-white placeholder:text-gray-700" placeholder="Street Address / Locality" onChange={(e) => setCustomer({...customer, street: e.target.value})} />
+                        
+                        <div className="grid grid-cols-2 gap-4">
+                            <input className="bg-white/5 border border-white/5 rounded-xl px-4 py-3 text-sm outline-none focus:border-purple-500/50 transition-all text-white placeholder:text-gray-700" placeholder="Taluka" onChange={(e) => setCustomer({...customer, taluka: e.target.value})} />
+                            <input className="bg-white/5 border border-white/5 rounded-xl px-4 py-3 text-sm outline-none focus:border-purple-500/50 transition-all text-white placeholder:text-gray-700" placeholder="District" onChange={(e) => setCustomer({...customer, district: e.target.value})} />
+                        </div>
+                        
+                        <div className="grid grid-cols-2 gap-4">
+                            <select className="bg-white/5 border border-white/5 rounded-xl px-4 py-3 text-sm outline-none focus:border-purple-500/50 transition-all text-gray-400 cursor-pointer appearance-none" value={customer.state} onChange={(e) => setCustomer({...customer, state: e.target.value})}>
+                                {STATES.map(s => <option key={s} value={s} className="bg-[#0a0515] text-white">{s}</option>)}
+                            </select>
+                            <input className="bg-white/5 border border-white/5 rounded-xl px-4 py-3 text-sm outline-none focus:border-purple-500/50 transition-all text-white placeholder:text-gray-700" placeholder="Pincode" maxLength={6} onChange={(e) => setCustomer({...customer, pincode: e.target.value})} />
+                        </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Footer Action */}
+                <div className="pt-6 border-t border-white/10 mt-6">
+                  <div className="flex justify-between items-center mb-6 px-2">
+                    <span className="text-[10px] font-black uppercase tracking-[0.3em] text-gray-500">Valuation</span>
+                    <span className="text-3xl font-serif italic text-white">₹{total.toFixed(2)}</span>
+                  </div>
+                  <button 
+                    disabled={loading || cart.length === 0}
+                    onClick={handleProceedToPayment}
+                    className="w-full bg-white text-black py-5 rounded-2xl font-black uppercase text-[10px] tracking-[0.3em] disabled:bg-gray-800 disabled:text-gray-600 hover:bg-purple-600 hover:text-white transition-all duration-500 shadow-xl shadow-purple-500/10"
+                  >
+                    {loading ? "Establishing Order..." : "Proceed to Payment"}
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <motion.div 
+                initial={{ opacity: 0, scale: 0.95 }}
+                animate={{ opacity: 1, scale: 1 }}
+                className="space-y-8"
+              >
+                {/* QR Section */}
+                <div className="bg-white/5 p-8 flex flex-col items-center border border-white/5 rounded-[2rem] relative overflow-hidden group">
+                  <div className="absolute top-0 inset-x-0 h-1 bg-gradient-to-r from-transparent via-purple-500 to-transparent opacity-30" />
+                  <p className="text-[10px] font-black mb-6 uppercase tracking-[0.4em] text-purple-400">Merchant Gateway</p>
+                  
+                  <div className="p-4 bg-white rounded-2xl shadow-2xl">
+                    <QRCodeSVG value={generateUPILink()} size={160} />
+                  </div>
+                  
+                  <div className="mt-8 text-center">
+                    <p className="font-serif italic text-2xl text-white">₹{total.toFixed(2)}</p>
+                    <p className="text-[9px] font-mono text-gray-500 mt-1 uppercase tracking-widest">{VPA_ID}</p>
+                  </div>
+                </div>
+                
+                {/* Verification Section */}
+                <div className="space-y-5">
+                  <div className="bg-purple-500/10 p-4 rounded-2xl border border-purple-500/20">
+                    <p className="text-[10px] text-purple-300 leading-relaxed font-medium">
+                      <span className="text-white font-bold uppercase mr-2">Protocol:</span> 
+                      Locate the 12-digit UTR (Ref No) in your banking app's transaction history and enter it below to authorize.
+                    </p>
+                  </div>
+                  
+                  <input 
+                    className="w-full bg-white/5 border border-white/10 p-5 rounded-2xl text-center text-2xl font-black tracking-[0.4em] outline-none focus:border-purple-500 transition-all text-white placeholder:text-gray-800" 
+                    placeholder="000000000000"
+                    maxLength={12}
+                    onChange={(e) => setUtr(e.target.value)}
+                  />
+                  
+                  <div className="space-y-4">
+                    <button 
+                        onClick={handleVerifyPayment}
+                        disabled={loading}
+                        className="w-full bg-white text-black py-5 rounded-2xl font-black uppercase text-[10px] tracking-[0.3em] hover:bg-green-500 hover:text-white transition-all duration-500 shadow-xl"
+                    >
+                        {loading ? "Verifying Archive..." : "Finalize Acquisition"}
+                    </button>
+                    
+                    <button 
+                        onClick={() => setStep(1)} 
+                        className="w-full text-gray-600 text-[10px] font-black uppercase tracking-widest hover:text-white transition-colors"
+                    >
+                        ← Adjust Details
+                    </button>
+                  </div>
+                </div>
+              </motion.div>
+            )}
+          </motion.div>
+        </>
+      )}
+    </AnimatePresence>
   );
 }
