@@ -162,7 +162,8 @@ export default function Home() {
               The Sovereign Collection
             </span>
             <h1 className="font-serif text-5xl md:text-[9rem] text-white mb-8 italic leading-[1] tracking-tighter">
-              Karuna <span className="text-transparent bg-clip-text bg-gradient-to-b from-purple-200 to-purple-600">Luxe</span>
+              Karuna <span className="text-transparent bg-clip-text bg-gradient-to-b from-purple-200 to-purple-600">Luxe 
+              </span> Library
             </h1>
             
             <div className="max-w-2xl mx-auto relative group px-2">

@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/app/lib/supabase";
 import ImageCapture from "@/components/ImageCapture";
 import Link from "next/link";
+import { motion, AnimatePresence } from "framer-motion";
 
 const INITIAL_FORM = {
   title: "", author: "", author_id: "", publication: "", description: "",
@@ -84,7 +85,6 @@ export default function AdminDashboard() {
     if (!form.image_url || !form.author_id) return alert("Missing Front Image or Author!");
     setLoading(true);
     
-    // Deconstruct to remove nested objects and IDs not meant for the database payload
     const { authors: nestedAuthors, id, created_at, ...cleanFormData } = form as any;
     
     const payload = { 
@@ -92,7 +92,7 @@ export default function AdminDashboard() {
       price: Number(form.price), 
       discount_percent: Number(form.discount_percent), 
       stock_count: Number(form.stock_count),
-      is_bestseller: Boolean(form.is_bestseller) // Ensure it's a boolean
+      is_bestseller: Boolean(form.is_bestseller)
     };
 
     const { error } = editingId 
@@ -102,171 +102,193 @@ export default function AdminDashboard() {
     if (!error) {
       resetForm();
       fetchData();
-      alert(editingId ? "Book Updated!" : "Book Added!");
+      alert(editingId ? "Masterpiece Updated!" : "New Masterpiece Added!");
     } else alert(error.message);
     setLoading(false);
   }
 
   async function handleDelete(id: string) {
-    if (!confirm("Are you sure?")) return;
+    if (!confirm("Are you sure you want to remove this work?")) return;
     const { error } = await supabase.from("books").delete().eq("id", id);
     if (!error) fetchData();
   }
 
   return (
-    <div className="p-4 md:p-8 bg-stone-50 min-h-screen font-sans text-stone-900">
+    <div className="min-h-screen bg-[#05010d] text-gray-200 selection:bg-purple-500/30 p-4 md:p-8">
       <div className="max-w-7xl mx-auto">
         
-        {/* HEADER */}
-        <header className="flex flex-col mb-10 pb-6 border-b border-stone-200">
-          <div className="mb-6">
-            <h1 className="text-2xl md:text-3xl font-serif font-bold italic text-stone-800">Admin Dashboard</h1>
-            <p className="text-[10px] font-bold uppercase tracking-[0.3em] text-stone-400">Control Panel</p>
+        {/* 🏛 LUXURY HEADER */}
+        <header className="mb-12">
+          <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-6 mb-10">
+            <div>
+              <p className="text-[10px] font-black uppercase tracking-[0.4em] text-purple-500 mb-2">Internal Curation</p>
+              <h1 className="text-4xl md:text-5xl font-serif italic text-white tracking-tighter">Archive Control</h1>
+            </div>
+            
+            <nav className="flex gap-2 p-1.5 bg-white/5 backdrop-blur-xl border border-white/10 rounded-full overflow-x-auto no-scrollbar max-w-full">
+              {[
+                { label: "Inventory", href: "/admin", active: true },
+                { label: "Stock", href: "/admin/stock" },
+                { label: "Banners", href: "/admin/banners" },
+                { label: "Authors", href: "/admin/authors" },
+                { label: "Campaigns", href: "/admin/campaigns" }
+              ].map((item) => (
+                <Link 
+                  key={item.label} 
+                  href={item.href} 
+                  className={`px-5 py-2 rounded-full text-[10px] font-bold uppercase tracking-widest transition-all ${
+                    item.active ? 'bg-purple-600 text-white' : 'text-gray-500 hover:text-gray-300'
+                  }`}
+                >
+                  {item.label}
+                </Link>
+              ))}
+            </nav>
           </div>
-          <nav className="flex gap-2 overflow-x-auto pb-2 no-scrollbar scroll-smooth whitespace-nowrap -mx-4 px-4 md:mx-0 md:px-0">
-            <Link href="/admin" className="px-5 py-2 bg-stone-900 text-white text-[10px] font-bold uppercase rounded-full shrink-0">Inventory</Link>
-            <Link href="/admin/stock" className="px-5 py-2 bg-white border border-teal-600 text-teal-600 text-[10px] font-bold uppercase rounded-full shrink-0">Stock</Link>
-            <Link href="/admin/banners" className="px-5 py-2 bg-white border text-[10px] font-bold uppercase rounded-full shrink-0">Banners</Link>
-            <Link href="/admin/authors" className="px-5 py-2 bg-white border text-[10px] font-bold uppercase rounded-full shrink-0">Authors</Link>
-            <Link href="/admin/campaigns" className="px-5 py-2 bg-white border border-teal-600 text-teal-600 text-[10px] font-bold uppercase rounded-full shrink-0">Campaigns</Link>
-          </nav>
         </header>
 
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-10">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 md:gap-12">
           
-          {/* FORM SECTION */}
-          <section className="lg:col-span-5 bg-white p-5 md:p-8 border border-stone-200 shadow-sm rounded-sm h-fit lg:sticky lg:top-8 order-1 lg:order-1">
-            <h2 className="text-[10px] font-black uppercase tracking-widest text-teal-600 mb-6 border-b pb-2">
-              {editingId ? "Edit Book Record" : "New Library Entry"}
-            </h2>
+          {/* 🖋 FORM SECTION (GLASSMorphism) */}
+          <section className="lg:col-span-5 order-1">
+            <div className="sticky top-8 bg-white/[0.03] backdrop-blur-2xl border border-white/10 p-6 md:p-8 rounded-[2rem] shadow-2xl">
+              <h2 className="text-[10px] font-black uppercase tracking-[0.3em] text-purple-400 mb-8 flex items-center gap-3">
+                <span className="w-8 h-[1px] bg-purple-500/50" />
+                {editingId ? "Modify Record" : "New Library Entry"}
+              </h2>
 
-            <form onSubmit={handleSubmit} className="space-y-6">
-              <div className="grid grid-cols-2 gap-3 md:gap-4">
-                <ImageCapture label="Front" onUpload={(url) => setForm({...form, image_url: url})} />
-                <ImageCapture label="Back" onUpload={(url) => setForm({...form, back_image_url: url})} />
-              </div>
-
-              <input 
-                className="w-full border-b py-2 text-base md:text-lg font-serif outline-none bg-transparent" 
-                placeholder="Book Title" 
-                value={form.title || ""} 
-                onChange={e => setForm({...form, title: e.target.value})} 
-                required 
-              />
-              
-              <div className="space-y-1">
-                <label className="text-[9px] font-bold uppercase text-stone-400">Author</label>
-                <div className="flex flex-wrap gap-2">
-                  <select 
-                    className="flex-1 min-w-[150px] border-b py-2 text-sm outline-none bg-transparent" 
-                    value={form.author_id || ""} 
-                    onChange={(e) => setForm({...form, author_id: e.target.value, author: authors.find(a => a.id === e.target.value)?.name || ""})} 
-                    required
-                  >
-                    <option value="">Select Author...</option>
-                    {authors.map(a => <option key={a.id} value={a.id}>{a.name}</option>)}
-                  </select>
-                  <button type="button" onClick={() => { setEditingAuthorId(null); setNewAuthor(INITIAL_AUTHOR); setShowAuthorModal(true); }} className="text-[10px] font-bold bg-teal-50 text-teal-700 px-3 py-2 rounded uppercase">+ New</button>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div className="flex flex-col">
-                  <label className="text-[9px] font-bold text-stone-400 uppercase">Price (₹)</label>
-                  <input type="number" value={form.price || ""} onChange={e => setForm({...form, price: e.target.value})} className="border-b py-2 outline-none bg-transparent font-bold text-sm" required />
-                </div>
-                <div className="flex flex-col">
-                  <label className="text-[9px] font-bold text-stone-400 uppercase">Discount %</label>
-                  <input type="number" value={form.discount_percent || 0} onChange={e => setForm({...form, discount_percent: Number(e.target.value)})} className="border-b py-2 text-red-600 outline-none bg-transparent font-bold text-sm" />
-                </div>
-              </div>
-
-              {/* BESTSELLER TICK BOX */}
-              <div className="flex items-center gap-3 p-3 bg-stone-50 border border-dashed border-stone-300 rounded">
-                <input 
-                  type="checkbox" 
-                  id="bestseller"
-                  checked={form.is_bestseller || false}
-                  onChange={e => setForm({...form, is_bestseller: e.target.checked})}
-                  className="w-5 h-5 accent-teal-600 cursor-pointer"
-                />
-                <label htmlFor="bestseller" className="text-xs font-bold uppercase tracking-wider text-stone-700 cursor-pointer select-none">
-                  Mark as Bestseller
-                </label>
-              </div>
-
-              {/* ENHANCED STOCK CONTROL */}
-              <div className="bg-stone-50 p-4 rounded-md border border-stone-200 space-y-4">
-                <div className="flex items-center justify-between">
-                  <label className="text-[10px] font-black text-stone-500 uppercase tracking-widest">Stock Inventory</label>
-                  <span className="text-xl font-black text-teal-600">{form.stock_count}</span>
+              <form onSubmit={handleSubmit} className="space-y-8">
+                <div className="grid grid-cols-2 gap-4">
+                  <ImageCapture label="Cover Art" onUpload={(url) => setForm({...form, image_url: url})} />
+                  <ImageCapture label="Reverse" onUpload={(url) => setForm({...form, back_image_url: url})} />
                 </div>
 
-                <div className="flex items-center gap-3">
-                  <button type="button" onClick={() => handleStockAdjustment(-1)} className="w-12 h-12 flex items-center justify-center bg-white border border-stone-300 rounded-full text-xl font-bold shadow-sm active:scale-95">-</button>
-                  <input 
-                    type="number" 
-                    value={form.stock_count} 
-                    onChange={e => setForm({...form, stock_count: Number(e.target.value)})}
-                    className="flex-1 bg-transparent text-center font-bold text-lg border-b border-stone-300 outline-none"
-                  />
-                  <button type="button" onClick={() => handleStockAdjustment(1)} className="w-12 h-12 flex items-center justify-center bg-white border border-stone-300 rounded-full text-xl font-bold shadow-sm active:scale-95">+</button>
+                <div className="space-y-6">
+                  <div className="group border-b border-white/10 focus-within:border-purple-500 transition-colors">
+                    <label className="text-[9px] font-bold uppercase text-gray-500 tracking-widest">Masterpiece Title</label>
+                    <input 
+                      className="w-full py-2 text-xl font-serif bg-transparent outline-none text-white placeholder:text-gray-700" 
+                      placeholder="e.g. The Sovereign" 
+                      value={form.title || ""} 
+                      onChange={e => setForm({...form, title: e.target.value})} 
+                      required 
+                    />
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <label className="text-[9px] font-bold uppercase text-gray-500 tracking-widest">The Author</label>
+                    <div className="flex gap-3">
+                      <select 
+                        className="flex-1 bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm outline-none focus:border-purple-500 transition-colors appearance-none" 
+                        value={form.author_id || ""} 
+                        onChange={(e) => setForm({...form, author_id: e.target.value, author: authors.find(a => a.id === e.target.value)?.name || ""})} 
+                        required
+                      >
+                        <option value="" className="bg-[#05010d]">Select Author...</option>
+                        {authors.map(a => <option key={a.id} value={a.id} className="bg-[#05010d]">{a.name}</option>)}
+                      </select>
+                      <button type="button" onClick={() => { setEditingAuthorId(null); setNewAuthor(INITIAL_AUTHOR); setShowAuthorModal(true); }} className="px-4 bg-purple-600/20 text-purple-400 border border-purple-500/30 rounded-xl text-[10px] font-bold uppercase hover:bg-purple-600 hover:text-white transition-all">
+                        +
+                      </button>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-6">
+                    <div className="group border-b border-white/10">
+                      <label className="text-[9px] font-bold text-gray-500 uppercase">Valuation (₹)</label>
+                      <input type="number" value={form.price || ""} onChange={e => setForm({...form, price: e.target.value})} className="w-full py-2 bg-transparent text-lg font-bold outline-none text-white" required />
+                    </div>
+                    <div className="group border-b border-white/10">
+                      <label className="text-[9px] font-bold text-gray-500 uppercase">Privilege (%)</label>
+                      <input type="number" value={form.discount_percent || 0} onChange={e => setForm({...form, discount_percent: Number(e.target.value)})} className="w-full py-2 bg-transparent text-lg font-bold outline-none text-purple-400" />
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-4 p-4 bg-purple-600/5 rounded-2xl border border-purple-500/20">
+                    <input 
+                      type="checkbox" 
+                      id="bestseller"
+                      checked={form.is_bestseller || false}
+                      onChange={e => setForm({...form, is_bestseller: e.target.checked})}
+                      className="w-5 h-5 accent-purple-600 rounded"
+                    />
+                    <label htmlFor="bestseller" className="text-[10px] font-black uppercase tracking-widest text-white cursor-pointer">Recognized Bestseller</label>
+                  </div>
+
+                  {/* 📦 STOCK CONTROL */}
+                  <div className="p-6 bg-white/5 rounded-3xl border border-white/10 space-y-6">
+                    <div className="flex justify-between items-center">
+                      <span className="text-[10px] font-bold uppercase tracking-widest text-gray-500">Inventory Count</span>
+                      <span className="text-3xl font-serif italic text-purple-500">{form.stock_count}</span>
+                    </div>
+                    <div className="flex items-center justify-between gap-4">
+                      <button type="button" onClick={() => handleStockAdjustment(-1)} className="w-12 h-12 rounded-full border border-white/10 flex items-center justify-center hover:bg-white/10 transition-colors text-xl">－</button>
+                      <input 
+                        type="number" 
+                        value={form.stock_count} 
+                        onChange={e => setForm({...form, stock_count: Number(e.target.value)})}
+                        className="flex-1 bg-transparent text-center text-2xl font-serif outline-none"
+                      />
+                      <button type="button" onClick={() => handleStockAdjustment(1)} className="w-12 h-12 rounded-full border border-white/10 flex items-center justify-center hover:bg-white/10 transition-colors text-xl">＋</button>
+                    </div>
+                    <div className="flex gap-2">
+                      <input 
+                        type="number" 
+                        placeholder="Quick Bulk Add..." 
+                        value={quickStockAdd}
+                        onChange={(e) => setQuickStockAdd(e.target.value)}
+                        className="flex-1 bg-white/5 rounded-xl px-4 py-2 text-xs outline-none border border-white/5"
+                      />
+                      <button type="button" onClick={applyQuickStock} className="px-4 py-2 bg-white text-black rounded-xl text-[9px] font-bold uppercase hover:bg-purple-600 hover:text-white transition-all">Add</button>
+                    </div>
+                  </div>
                 </div>
 
-                <div className="flex gap-2 pt-2">
-                  <input 
-                    type="number" 
-                    placeholder="Add multiple (e.g. 50)" 
-                    value={quickStockAdd}
-                    onChange={(e) => setQuickStockAdd(e.target.value)}
-                    className="flex-1 text-[11px] p-2 border rounded bg-white outline-none"
-                  />
-                  <button 
-                    type="button" 
-                    onClick={applyQuickStock}
-                    className="bg-stone-800 text-white px-4 py-2 text-[10px] font-bold uppercase rounded shadow-sm active:opacity-80"
-                  >
-                    Add
+                <div className="flex gap-3 pt-4">
+                  <button type="submit" className="flex-[2] bg-white text-black py-5 rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] hover:bg-purple-600 hover:text-white transition-all shadow-xl">
+                    {loading ? "Archiving..." : editingId ? "Update Masterpiece" : "Finalize Entry"}
                   </button>
+                  {editingId && (
+                    <button type="button" onClick={resetForm} className="flex-1 border border-white/10 rounded-2xl text-[10px] font-bold uppercase hover:bg-white/5 transition-all">Discard</button>
+                  )}
                 </div>
-              </div>
-
-              <textarea className="w-full border p-3 text-xs bg-stone-50 outline-none h-20" placeholder="Book Summary..." value={form.description || ""} onChange={e => setForm({...form, description: e.target.value})} />
-
-              <div className="flex flex-col sm:flex-row gap-2 pt-2">
-                <button type="submit" className="flex-[2] bg-black text-white py-4 text-[11px] font-bold uppercase tracking-widest hover:bg-stone-800 transition-all rounded-sm shadow-md">
-                  {loading ? "Saving..." : editingId ? "Update Record" : "Save Entry"}
-                </button>
-                {editingId && (
-                  <button type="button" onClick={resetForm} className="flex-1 border border-stone-200 py-4 text-[11px] font-bold uppercase tracking-widest hover:bg-stone-100 transition-colors rounded-sm">Cancel</button>
-                )}
-              </div>
-            </form>
+              </form>
+            </div>
           </section>
 
-          {/* LIST SECTION */}
-          <section className="lg:col-span-7 space-y-4 order-2 lg:order-2">
-            <h3 className="text-[10px] font-black uppercase text-stone-400 italic tracking-widest">Recent Inventory ({books.length})</h3>
-            <div className="grid gap-3">
+          {/* 📚 ARCHIVE LIST */}
+          <section className="lg:col-span-7 space-y-6 order-2">
+            <div className="flex justify-between items-end mb-8">
+              <h3 className="text-[11px] font-black uppercase tracking-[0.4em] text-gray-500">Collection Archive ({books.length})</h3>
+            </div>
+
+            <div className="grid gap-4">
               {books.map(book => (
-                <div key={book.id} className="relative bg-white p-3 md:p-4 flex gap-3 md:gap-4 border border-stone-200 shadow-sm items-center transition-all overflow-hidden">
-                  {/* Bestseller Badge in list */}
-                  {book.is_bestseller && (
-                    <div className="absolute top-0 right-0 bg-yellow-400 text-[8px] font-black uppercase px-2 py-0.5 rounded-bl-sm shadow-sm">Bestseller</div>
-                  )}
-                  
-                  <img src={book.image_url} className="w-12 h-16 md:w-14 md:h-20 object-cover rounded-sm shadow-sm shrink-0" alt={book.title} />
-                  <div className="flex-1 min-w-0">
-                    <h4 className="font-serif text-sm md:text-base font-bold text-stone-800 truncate">{book.title}</h4>
-                    <p className="text-[9px] text-teal-600 font-bold uppercase tracking-tighter truncate">{book.authors?.name || "Unknown Author"}</p>
-                    <p className="font-bold text-stone-900 mt-0.5 text-xs md:text-sm">₹{book.price} <span className="ml-2 text-[9px] text-stone-400 font-normal">Stock: {book.stock_count || 0}</span></p>
+                <div key={book.id} className="group relative bg-white/[0.02] hover:bg-white/[0.05] p-4 rounded-3xl border border-white/5 flex gap-6 items-center transition-all duration-500">
+                  <div className="relative shrink-0">
+                    <img src={book.image_url} className="w-16 h-24 md:w-20 md:h-28 object-cover rounded-xl shadow-2xl group-hover:scale-105 transition-transform duration-500" alt={book.title} />
+                    {book.is_bestseller && (
+                      <div className="absolute -top-2 -left-2 bg-purple-600 text-[7px] font-black px-2 py-1 rounded-md shadow-lg rotate-[-10deg]">BESTSELLER</div>
+                    )}
                   </div>
-                  <div className="flex flex-col md:flex-row gap-2 md:gap-4 items-end md:items-center">
-                    <button className="text-stone-400 text-[10px] font-black uppercase hover:text-teal-600" onClick={() => { setForm(book); setEditingId(book.id); window.scrollTo({ top: 0, behavior: 'smooth' }); }}>
-                      Edit
+                  
+                  <div className="flex-1 min-w-0">
+                    <p className="text-[9px] font-bold text-purple-500 uppercase tracking-widest mb-1">{book.authors?.name || "Unknown Author"}</p>
+                    <h4 className="font-serif text-lg md:text-xl text-white truncate mb-1">{book.title}</h4>
+                    <div className="flex items-center gap-4">
+                      <span className="text-sm font-bold text-white">₹{book.price}</span>
+                      <span className={`text-[10px] px-2 py-0.5 rounded-full border ${book.stock_count > 10 ? 'border-emerald-500/20 text-emerald-500' : 'border-red-500/20 text-red-500'}`}>
+                        {book.stock_count} in stock
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="flex flex-col gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <button className="p-3 bg-white/5 rounded-full hover:bg-purple-600 transition-colors" onClick={() => { setForm(book); setEditingId(book.id); window.scrollTo({ top: 0, behavior: 'smooth' }); }}>
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg>
                     </button>
-                    <button className="text-red-400 text-[10px] font-black uppercase hover:text-red-600" onClick={() => handleDelete(book.id)}>
-                      Del
+                    <button className="p-3 bg-white/5 rounded-full hover:bg-red-600 transition-colors" onClick={() => handleDelete(book.id)}>
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
                     </button>
                   </div>
                 </div>
@@ -276,35 +298,35 @@ export default function AdminDashboard() {
         </div>
       </div>
 
-      {/* AUTHOR MODAL */}
-      {showAuthorModal && (
-        <div className="fixed inset-0 bg-stone-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-white p-6 md:p-8 max-w-md w-full shadow-2xl border border-stone-200 rounded-sm overflow-y-auto max-h-[90vh]">
-            <div className="flex justify-between items-start mb-6 border-b pb-4">
-                <div>
-                  <h2 className="font-serif text-xl md:text-2xl italic">{editingAuthorId ? "Update Author" : "New Author"}</h2>
-                  <p className="text-[9px] font-bold uppercase text-stone-400 tracking-widest">Archive</p>
-                </div>
-                <button onClick={() => setShowAuthorModal(false)} className="text-2xl text-stone-300 hover:text-stone-900 transition-colors">×</button>
-            </div>
-            
-            <div className="space-y-5">
-              <div className="max-w-[120px] mx-auto">
-                <ImageCapture label="Portrait" onUpload={(url) => setNewAuthor({...newAuthor, profile_image_url: url})} />
+      {/* 🎭 AUTHOR MODAL (Glassmorphism Overlay) */}
+      <AnimatePresence>
+        {showAuthorModal && (
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 bg-black/80 backdrop-blur-md z-[100] flex items-center justify-center p-4">
+            <motion.div initial={{ scale: 0.9, y: 20 }} animate={{ scale: 1, y: 0 }} className="bg-[#0d071a] border border-white/10 p-8 max-w-md w-full rounded-[2.5rem] shadow-[0_0_50px_rgba(168,85,247,0.15)]">
+              <div className="flex justify-between items-center mb-8">
+                <h2 className="font-serif text-2xl italic text-white">{editingAuthorId ? "Update Profile" : "New Contributor"}</h2>
+                <button onClick={() => setShowAuthorModal(false)} className="text-3xl text-gray-500 hover:text-white">×</button>
               </div>
-              <input className="w-full border-b py-2 text-lg font-serif outline-none bg-transparent" placeholder="Full Name" value={newAuthor.name || ""} onChange={e => setNewAuthor({...newAuthor, name: e.target.value})} />
-              <textarea className="w-full border p-3 text-xs bg-stone-50 h-24 outline-none" placeholder="Biography..." value={newAuthor.bio || ""} onChange={e => setNewAuthor({...newAuthor, bio: e.target.value})} />
               
-              <div className="flex gap-2 pt-4">
-                <button onClick={handleQuickAddAuthor} className="flex-1 bg-teal-600 text-white py-3 text-[10px] font-bold uppercase tracking-widest rounded-sm shadow-sm active:opacity-80">
-                  {saveLoading ? "Wait..." : "Save"}
-                </button>
-                <button onClick={() => setShowAuthorModal(false)} className="flex-1 border border-stone-200 py-3 text-[10px] font-bold uppercase text-stone-400 rounded-sm">Close</button>
+              <div className="space-y-6">
+                <div className="flex justify-center">
+                   <div className="w-24 h-24 rounded-full overflow-hidden border border-purple-500/30">
+                      <ImageCapture label="Portrait" onUpload={(url) => setNewAuthor({...newAuthor, profile_image_url: url})} />
+                   </div>
+                </div>
+                <input className="w-full bg-white/5 border-b border-white/10 py-3 px-4 rounded-t-xl outline-none font-serif text-lg text-white" placeholder="Name of Author" value={newAuthor.name || ""} onChange={e => setNewAuthor({...newAuthor, name: e.target.value})} />
+                <textarea className="w-full bg-white/5 border border-white/10 p-4 text-sm rounded-xl outline-none h-32 text-gray-400" placeholder="Biography..." value={newAuthor.bio || ""} onChange={e => setNewAuthor({...newAuthor, bio: e.target.value})} />
+                
+                <div className="flex gap-3">
+                  <button onClick={handleQuickAddAuthor} className="flex-1 bg-white text-black py-4 rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-purple-600 hover:text-white transition-all">
+                    {saveLoading ? "Syncing..." : "Add to Archive"}
+                  </button>
+                </div>
               </div>
-            </div>
-          </div>
-        </div>
-      )}
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
