@@ -187,7 +187,7 @@ export default function Home() {
         </div>
       </section>
 
-      {/* 🎊 CAMPAIGN SECTION - Reduced Mobile Spacing */}
+      {/* 🎊 CAMPAIGN SECTION */}
       {campaign && !searchQuery && selectedCategory === "All" && (
         <motion.section 
           initial={{ opacity: 0, y: 20 }}
@@ -230,18 +230,40 @@ export default function Home() {
         </div>
       </nav>
 
-      {/* ✅ BEST SELLERS */}
+      {/* ✅ BEST SELLERS - Responsive Grid/Slider */}
       {selectedCategory === "All" && bestSellers.length > 0 && !searchQuery && (
-        <section className="py-12 md:py-24 px-4">
-          <div className="max-w-7xl mx-auto">
+        <section className="py-12 md:py-24">
+          <div className="max-w-7xl mx-auto px-4">
             <div className="mb-10 md:mb-16">
-              <h2 className="font-serif text-3xl md:text-5xl text-white italic">Bestsellers</h2>
-              <div className="w-20 h-1 bg-purple-600 mt-4 rounded-full" />
+              <div className="flex justify-between items-end">
+                <div>
+                  <h2 className="font-serif text-3xl md:text-5xl text-white italic">Bestsellers</h2>
+                  <div className="w-20 h-1 bg-purple-600 mt-4 rounded-full" />
+                </div>
+                <div className="hidden md:block text-[10px] font-bold text-gray-500 tracking-[0.3em] uppercase">
+                  Swipe for more →
+                </div>
+              </div>
             </div>
-            <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4 md:gap-10">
+          </div>
+
+          {/* Desktop: Grid | Mobile: Horizontal Snap Slider */}
+          <div className="max-w-7xl mx-auto md:px-4">
+            <div className="
+              flex md:grid md:grid-cols-4 lg:grid-cols-5 
+              overflow-x-auto md:overflow-x-visible 
+              snap-x snap-mandatory no-scrollbar 
+              gap-6 md:gap-10 px-4 md:px-0
+            ">
               {bestSellers.map((book) => (
-                <div key={book.id} className="relative group">
-                  <div className="absolute top-2 right-2 z-10 bg-purple-600 text-[8px] font-bold px-2 py-0.5 rounded shadow-lg">TOP</div>
+                <div 
+                  key={book.id} 
+                  className="
+                    relative group flex-shrink-0 w-[70vw] md:w-auto 
+                    snap-center md:snap-align-none
+                  "
+                >
+                  <div className="absolute top-2 right-2 z-10 bg-purple-600 text-[8px] font-bold px-2 py-0.5 rounded shadow-lg text-white">TOP</div>
                   <BookCard book={book} />
                 </div>
               ))}
@@ -250,7 +272,7 @@ export default function Home() {
         </section>
       )}
 
-      {/* 📖 ABOUT US SECTION (NEW) */}
+      {/* 📖 ABOUT US SECTION */}
       {!searchQuery && selectedCategory === "All" && (
         <section className="py-16 md:py-32 px-4 relative bg-[#080212]">
           <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full max-w-3xl h-full bg-purple-600/5 blur-[120px] rounded-full pointer-events-none" />
