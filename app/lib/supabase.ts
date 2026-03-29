@@ -1,10 +1,13 @@
-import { createClient } from '@supabase/supabase-js';
+import { createClient } from '@supabase/supabase-js'
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
 
 if (!supabaseUrl || !supabaseAnonKey) {
-  console.error("Supabase environment variables are missing!");
+  console.error("Missing Supabase Environment Variables. Check your .env.local file.")
 }
 
-export const supabase = createClient(supabaseUrl, supabaseAnonKey);
+export const supabase = createClient(
+  supabaseUrl || 'https://wjqhfkmgovvhnsxrtzyw.supabase.co', 
+  supabaseAnonKey || 'sb_publishable_zmfOW4URn0M7JjVOk__7VA_VSKU7J9M'
+)
